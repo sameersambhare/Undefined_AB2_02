@@ -1,4 +1,4 @@
-# UI Component Designer Platform with AI Support
+# SnapUI - AI-Powered UI Design Platform
 
 A powerful web application that allows users to design beautiful UI components with AI assistance. Built with React, TypeScript, and Next.js.
 
@@ -55,7 +55,7 @@ A powerful web application that allows users to design beautiful UI components w
 /
 ├── app/                  # Next.js app directory
 │   ├── api/              # API routes
-│   ├── createui/         # UI designer page
+│   ├── createui/         # SnapUI designer page
 │   ├── signin/           # Authentication pages
 │   ├── signup/           
 │   └── ...
