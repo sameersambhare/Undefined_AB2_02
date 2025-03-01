@@ -680,6 +680,14 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
 
     const wrapperClasses = `relative group ${isPreviewMode ? '' : 'cursor-move'} ${isSelected ? 'ring-2 ring-blue-500 ring-offset-2' : ''}`;
 
+    const handleDelete = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      const newComponents = components.filter(comp => comp.id !== id);
+      setComponents(newComponents);
+      updateHistory(newComponents);
+      setSelectedComponent(null);
+    };
+
     // Import the components dynamically based on the library
     const renderComponentByLibrary = () => {
       switch (type) {
@@ -691,18 +699,23 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
                   onClick={(e) => !isPreviewMode && handleComponentClick(id, e)}
                   draggable={!isPreviewMode}
                   onDragStart={(e) => handleComponentDragStart(e, id)}>
-                  {/* 
-                    Note: There's a type mismatch with MUI component props.
-                    For a production app, we would need to properly type the props
-                    or create a wrapper component that handles the conversion.
-                  */}
+                  {isSelected && !isPreviewMode && (
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-md z-50 bg-red-500 hover:bg-red-600 border-2 border-white"
+                      onClick={handleDelete}
+                    >
+                      <FiTrash2 className="h-3 w-3 text-white" />
+                    </Button>
+                  )}
                   <MuiButton 
                     // @ts-ignore - Ignoring type error for demo purposes
                     variant="contained"
                     color="primary"
                     style={{
                       ...commonStyles,
-                      textTransform: 'none', // MUI buttons have text-transform: uppercase by default
+                      textTransform: 'none',
                       boxShadow: '0px 3px 1px -2px rgba(0,0,0,0.2), 0px 2px 2px 0px rgba(0,0,0,0.14), 0px 1px 5px 0px rgba(0,0,0,0.12)',
                       fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
                       fontWeight: 500,
@@ -728,6 +741,16 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
                   onClick={(e) => !isPreviewMode && handleComponentClick(id, e)}
                   draggable={!isPreviewMode}
                   onDragStart={(e) => handleComponentDragStart(e, id)}>
+                  {isSelected && !isPreviewMode && (
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-md z-50 bg-red-500 hover:bg-red-600 border-2 border-white"
+                      onClick={handleDelete}
+                    >
+                      <FiTrash2 className="h-3 w-3 text-white" />
+                    </Button>
+                  )}
                   <AntdButton 
                     type="primary"
                     style={commonStyles}
@@ -752,6 +775,16 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
                   onClick={(e) => !isPreviewMode && handleComponentClick(id, e)}
                   draggable={!isPreviewMode}
                   onDragStart={(e) => handleComponentDragStart(e, id)}>
+                  {isSelected && !isPreviewMode && (
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-md z-50 bg-red-500 hover:bg-red-600 border-2 border-white"
+                      onClick={handleDelete}
+                    >
+                      <FiTrash2 className="h-3 w-3 text-white" />
+                    </Button>
+                  )}
                   <Button
                     size={styles?.size || "default"}
                     variant={styles?.variant || "default"}
@@ -779,196 +812,89 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
               );
           }
         case 'Input':
-          switch (library) {
-            case 'mui':
-              return (
-                <div className={wrapperClasses}
-                  onClick={(e) => !isPreviewMode && handleComponentClick(id, e)}
-                  draggable={!isPreviewMode}
-                  onDragStart={(e) => handleComponentDragStart(e, id)}>
-                  {/* 
-                    Note: There's a type mismatch with MUI component props.
-                    For a production app, we would need to properly type the props
-                    or create a wrapper component that handles the conversion.
-                  */}
-                  <MuiInput
-                    // @ts-ignore - Ignoring type error for demo purposes
-                    label="MUI Input"
-                    variant="outlined"
-                    style={{
-                      ...commonStyles,
-                      fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-                      borderRadius: '4px',
-                    }}
-                    disabled={isPreviewMode}
+          return (
+            <div className={wrapperClasses}
+              onClick={(e) => !isPreviewMode && handleComponentClick(id, e)}
+              draggable={!isPreviewMode}
+              onDragStart={(e) => handleComponentDragStart(e, id)}>
+              {isSelected && !isPreviewMode && (
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-md z-50 bg-red-500 hover:bg-red-600 border-2 border-white"
+                  onClick={handleDelete}
+                >
+                  <FiTrash2 className="h-3 w-3 text-white" />
+                </Button>
+              )}
+              <MuiInput
+                // @ts-ignore - Ignoring type error for demo purposes
+                label="MUI Input"
+                variant="outlined"
+                style={{
+                  ...commonStyles,
+                  fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+                  borderRadius: '4px',
+                }}
+                disabled={isPreviewMode}
+              />
+              {isSelected && (
+                <div className="absolute top-full left-0 right-0 mt-2 z-10">
+                  <ComponentStyler
+                    componentType={type}
+                    onStyleChange={(styles) => handleStyleChange(id, styles)}
+                    initialStyles={component.styles}
                   />
-                  {isSelected && (
-                    <div className="absolute top-full left-0 right-0 mt-2 z-10">
-                      <ComponentStyler
-                        componentType={type}
-                        onStyleChange={(styles) => handleStyleChange(id, styles)}
-                        initialStyles={component.styles}
-                      />
-                    </div>
-                  )}
                 </div>
-              );
-            case 'antd':
-              return (
-                <div className={wrapperClasses}
-                  onClick={(e) => !isPreviewMode && handleComponentClick(id, e)}
-                  draggable={!isPreviewMode}
-                  onDragStart={(e) => handleComponentDragStart(e, id)}>
-                  <AntdInput
-                    placeholder={styles?.placeholder || "Ant Design Input"}
-                    style={commonStyles}
-                    disabled={isPreviewMode}
-                  />
-                  {isSelected && (
-                    <div className="absolute top-full left-0 right-0 mt-2 z-10">
-                      <ComponentStyler
-                        componentType={type}
-                        onStyleChange={(styles) => handleStyleChange(id, styles)}
-                        initialStyles={component.styles}
-                      />
-                    </div>
-                  )}
-                </div>
-              );
-            case 'shadcn':
-            default:
-              return (
-                <div className={wrapperClasses}
-                  onClick={(e) => !isPreviewMode && handleComponentClick(id, e)}
-                  draggable={!isPreviewMode}
-                  onDragStart={(e) => handleComponentDragStart(e, id)}>
-                  <Input
-                    placeholder={styles?.placeholder || "Shadcn Input"}
-                    style={{
-                      ...commonStyles,
-                      fontFamily: 'var(--font-sans)',
-                      borderRadius: 'var(--radius)',
-                    }}
-                    className="transition-colors"
-                    disabled={isPreviewMode}
-                  />
-                  {isSelected && (
-                    <div className="absolute top-full left-0 right-0 mt-2 z-10">
-                      <ComponentStyler
-                        componentType={type}
-                        onStyleChange={(styles) => handleStyleChange(id, styles)}
-                        initialStyles={component.styles}
-                      />
-                    </div>
-                  )}
-                </div>
-              );
-          }
+              )}
+            </div>
+          );
         case 'Card':
-          switch (library) {
-            case 'mui':
-              return (
-                <div className={wrapperClasses}
-                  onClick={(e) => !isPreviewMode && handleComponentClick(id, e)}
-                  draggable={!isPreviewMode}
-                  onDragStart={(e) => handleComponentDragStart(e, id)}>
-                  {/* 
-                    Note: There's a type mismatch with MUI component props.
-                    For a production app, we would need to properly type the props
-                    or create a wrapper component that handles the conversion.
-                  */}
-                  <MuiCard 
-                    // @ts-ignore - Ignoring type error for demo purposes
-                    style={{
-                      ...commonStyles,
-                      fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-                      borderRadius: '4px',
-                      boxShadow: '0px 2px 1px -1px rgba(0,0,0,0.2), 0px 1px 1px 0px rgba(0,0,0,0.14), 0px 1px 3px 0px rgba(0,0,0,0.12)',
-                      padding: '16px',
-                    }}
-                  >
-                    <div style={{ padding: '16px' }}>
-                      <h3 style={{ color: styles?.textColor, fontWeight: 500, marginBottom: '8px', fontSize: '1.1em' }}>
-                        {styles.cardTitle || 'MUI Card'}
-                      </h3>
-                      <p style={{ color: styles?.textColor, fontSize: '0.875rem' }}>
-                        {styles.cardContent === undefined || styles.cardContent === null ? 'This is a Material UI card with elevation and padding.' : styles.cardContent}
-                      </p>
-                    </div>
-                  </MuiCard>
-                  {isSelected && (
-                    <div className="absolute top-full left-0 right-0 mt-2 z-10">
-                      <ComponentStyler
-                        componentType={type}
-                        onStyleChange={(styles) => handleStyleChange(id, styles)}
-                        initialStyles={component.styles}
-                      />
-                    </div>
-                  )}
+          return (
+            <div className={wrapperClasses}
+              onClick={(e) => !isPreviewMode && handleComponentClick(id, e)}
+              draggable={!isPreviewMode}
+              onDragStart={(e) => handleComponentDragStart(e, id)}>
+              {isSelected && !isPreviewMode && (
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-md z-50 bg-red-500 hover:bg-red-600 border-2 border-white"
+                  onClick={handleDelete}
+                >
+                  <FiTrash2 className="h-3 w-3 text-white" />
+                </Button>
+              )}
+              <MuiCard 
+                // @ts-ignore - Ignoring type error for demo purposes
+                style={{
+                  ...commonStyles,
+                  fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+                  borderRadius: '4px',
+                  boxShadow: '0px 2px 1px -1px rgba(0,0,0,0.2), 0px 1px 1px 0px rgba(0,0,0,0.14), 0px 1px 3px 0px rgba(0,0,0,0.12)',
+                  padding: '16px',
+                }}
+              >
+                <div style={{ padding: '16px' }}>
+                  <h3 style={{ color: styles?.textColor, fontWeight: 500, marginBottom: '8px', fontSize: '1.1em' }}>
+                    {styles.cardTitle || 'MUI Card'}
+                  </h3>
+                  <p style={{ color: styles?.textColor, fontSize: '0.875rem' }}>
+                    {styles.cardContent === undefined || styles.cardContent === null ? 'This is a Material UI card with elevation and padding.' : styles.cardContent}
+                  </p>
                 </div>
-              );
-            case 'antd':
-              return (
-                <div className={wrapperClasses}
-                  onClick={(e) => !isPreviewMode && handleComponentClick(id, e)}
-                  draggable={!isPreviewMode}
-                  onDragStart={(e) => handleComponentDragStart(e, id)}>
-                  <AntdCard 
-                    title={styles.cardTitle || "Ant Design Card"}
-                    style={commonStyles}
-                  >
-                    <p style={{ color: styles?.textColor }}>
-                      {styles.cardContent === undefined || styles.cardContent === null ? 'This is an Ant Design card with a title and content area.' : styles.cardContent}
-                    </p>
-                  </AntdCard>
-                  {isSelected && (
-                    <div className="absolute top-full left-0 right-0 mt-2 z-10">
-                      <ComponentStyler
-                        componentType={type}
-                        onStyleChange={(styles) => handleStyleChange(id, styles)}
-                        initialStyles={component.styles}
-                      />
-                    </div>
-                  )}
+              </MuiCard>
+              {isSelected && (
+                <div className="absolute top-full left-0 right-0 mt-2 z-10">
+                  <ComponentStyler
+                    componentType={type}
+                    onStyleChange={(styles) => handleStyleChange(id, styles)}
+                    initialStyles={component.styles}
+                  />
                 </div>
-              );
-            case 'shadcn':
-            default:
-              return (
-                <div className={wrapperClasses}
-                  onClick={(e) => !isPreviewMode && handleComponentClick(id, e)}
-                  draggable={!isPreviewMode}
-                  onDragStart={(e) => handleComponentDragStart(e, id)}>
-                  <Card
-                    style={{
-                      ...commonStyles,
-                      fontFamily: 'var(--font-sans)',
-                      borderRadius: 'var(--radius)',
-                      boxShadow: 'var(--shadow)',
-                    }}
-                    className="p-6"
-                  >
-                    <div className="space-y-2">
-                      <h3 className="text-lg font-medium" style={{ color: styles?.textColor }}>
-                        {styles.cardTitle || 'Shadcn Card'}
-                      </h3>
-                      <p className="text-sm text-muted-foreground" style={{ color: styles?.textColor }}>
-                        {styles.cardContent === undefined || styles.cardContent === null ? 'This is a shadcn/ui card component with minimal styling.' : styles.cardContent}
-                      </p>
-                    </div>
-                  </Card>
-                  {isSelected && (
-                    <div className="absolute top-full left-0 right-0 mt-2 z-10">
-                      <ComponentStyler
-                        componentType={type}
-                        onStyleChange={(styles) => handleStyleChange(id, styles)}
-                        initialStyles={component.styles}
-                      />
-                    </div>
-                  )}
-                </div>
-              );
-          }
+              )}
+            </div>
+          );
         default:
           return <div>Unknown Component</div>;
       }
