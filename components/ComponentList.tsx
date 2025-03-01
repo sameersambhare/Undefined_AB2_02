@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { FiSquare, FiType, FiBox } from 'react-icons/fi';
+import React, { useState, useEffect, useRef } from 'react';
+import { FiSquare, FiType, FiBox, FiCircle, FiMinus, FiCornerRightDown } from 'react-icons/fi';
 import { Button as ShadcnButton } from './ui/button';
 import { Input as ShadcnInput } from './ui/input';
 import { Card as ShadcnCard } from './ui/card';
@@ -59,8 +59,117 @@ interface DefaultStylesType {
   Button: StyleProperties;
   Input: StyleProperties;
   Card: StyleProperties;
+  Rectangle: StyleProperties;
+  Circle: StyleProperties;
+  Line: StyleProperties;
   [key: string]: StyleProperties; // Allow indexing with string
 }
+
+// Resizable Preview Component
+interface ResizablePreviewProps {
+  children: React.ReactNode;
+  componentName: string;
+  styles: StyleProperties;
+  onResize: (width: string, height: string) => void;
+  aspectRatio?: boolean;
+}
+
+const ResizablePreview: React.FC<ResizablePreviewProps> = ({ 
+  children, 
+  componentName, 
+  styles, 
+  onResize,
+  aspectRatio = false
+}) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isResizing, setIsResizing] = useState(false);
+  const [startPos, setStartPos] = useState({ x: 0, y: 0 });
+  const [startSize, setStartSize] = useState({ width: 0, height: 0 });
+  
+  // Get initial dimensions from styles
+  const getInitialDimensions = () => {
+    const width = styles.width ? parseInt(styles.width) : 100;
+    const height = styles.height ? parseInt(styles.height) : 60;
+    return { width, height };
+  };
+
+  // Handle resize start
+  const handleResizeStart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (containerRef.current) {
+      const { width, height } = containerRef.current.getBoundingClientRect();
+      setStartSize({ width, height });
+      setStartPos({ x: e.clientX, y: e.clientY });
+      setIsResizing(true);
+    }
+  };
+
+  // Handle resize move
+  const handleResizeMove = (e: MouseEvent) => {
+    if (!isResizing) return;
+    
+    const deltaX = e.clientX - startPos.x;
+    const deltaY = e.clientY - startPos.y;
+    
+    let newWidth = Math.max(20, startSize.width + deltaX);
+    let newHeight = Math.max(20, startSize.height + deltaY);
+    
+    // Maintain aspect ratio if needed (for Circle)
+    if (aspectRatio) {
+      newHeight = newWidth;
+    }
+    
+    // Special case for Line component
+    if (componentName === 'Line') {
+      newHeight = 0;
+    }
+    
+    // Update component size
+    onResize(`${newWidth}px`, `${newHeight}px`);
+  };
+
+  // Handle resize end
+  const handleResizeEnd = () => {
+    setIsResizing(false);
+  };
+
+  // Add and remove event listeners
+  useEffect(() => {
+    if (isResizing) {
+      window.addEventListener('mousemove', handleResizeMove);
+      window.addEventListener('mouseup', handleResizeEnd);
+    }
+    
+    return () => {
+      window.removeEventListener('mousemove', handleResizeMove);
+      window.removeEventListener('mouseup', handleResizeEnd);
+    };
+  }, [isResizing, startPos, startSize]);
+
+  return (
+    <div 
+      ref={containerRef}
+      className="relative w-full h-full flex items-center justify-center"
+      style={{ 
+        width: styles.width || 'auto',
+        height: componentName === 'Line' ? 'auto' : (styles.height || 'auto'),
+      }}
+    >
+      {children}
+      
+      {/* Resize handle */}
+      <div 
+        className="absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+        onMouseDown={handleResizeStart}
+        title="Resize"
+      >
+        <FiCornerRightDown className="w-3 h-3 text-orange-500" />
+      </div>
+    </div>
+  );
+};
 
 // Default styles for components
 const defaultStyles: DefaultStylesType = {
@@ -110,6 +219,42 @@ const defaultStyles: DefaultStylesType = {
     library: "shadcn", // Default library
     cardTitle: "Card Title", // Default card title
     cardContent: "Card Content", // Default card content
+  },
+  Rectangle: {
+    backgroundColor: "#f97316", // orange-500
+    borderColor: "#f97316", // orange-500
+    borderWidth: "2px",
+    borderStyle: "solid",
+    borderRadius: "0.375rem", // rounded-md
+    width: "100px",
+    height: "60px",
+    shadow: "sm",
+    opacity: 100,
+    library: "shadcn", // Default library
+  },
+  Circle: {
+    backgroundColor: "#f97316", // orange-500
+    borderColor: "#f97316", // orange-500
+    borderWidth: "2px",
+    borderStyle: "solid",
+    borderRadius: "9999px", // fully rounded
+    width: "80px",
+    height: "80px",
+    shadow: "sm",
+    opacity: 100,
+    library: "shadcn", // Default library
+  },
+  Line: {
+    backgroundColor: "transparent",
+    borderColor: "#f97316", // orange-500
+    borderWidth: "0",
+    borderTopWidth: "2px",
+    borderStyle: "solid",
+    width: "100px",
+    height: "0",
+    shadow: "none",
+    opacity: 100,
+    library: "shadcn", // Default library
   }
 };
 
@@ -117,7 +262,10 @@ const ComponentList: React.FC<ComponentListProps> = ({ onDragStart }) => {
   const [componentStyles, setComponentStyles] = useState<ComponentStyles>({
     Button: { ...defaultStyles.Button },
     Input: { ...defaultStyles.Input },
-    Card: { ...defaultStyles.Card }
+    Card: { ...defaultStyles.Card },
+    Rectangle: { ...defaultStyles.Rectangle },
+    Circle: { ...defaultStyles.Circle },
+    Line: { ...defaultStyles.Line }
   });
   
   const handleStyleChange = (componentName: string, styles: any) => {
@@ -160,103 +308,167 @@ const ComponentList: React.FC<ComponentListProps> = ({ onDragStart }) => {
                  defaultStyles[name].shadow === 'sm' ? '0 1px 2px 0 rgb(0 0 0 / 0.05)' : 'none',
     };
 
-    switch (name) {
-      case 'Button':
-        switch (library) {
-          case 'mui':
-            return (
-              <MuiButton variant="contained" color="primary" style={commonStyles}>
-                {styles.buttonText === undefined || styles.buttonText === null ? 'Button' : styles.buttonText}
-              </MuiButton>
-            );
-          case 'antd':
-            return (
-              <AntdButton type="primary" style={commonStyles}>
-                {styles.buttonText === undefined || styles.buttonText === null ? 'Button' : styles.buttonText}
-              </AntdButton>
-            );
-          case 'shadcn':
-          default:
-            return (
-              <ShadcnButton
-                size={styles.size || defaultStyles.Button.size}
-                variant={styles.variant || defaultStyles.Button.variant}
-                style={commonStyles}
-              >
-                {styles.buttonText === undefined || styles.buttonText === null ? 'Button' : styles.buttonText}
-              </ShadcnButton>
-            );
-        }
-      case 'Input':
-        switch (library) {
-          case 'mui':
-            return (
-              <MuiInput
-                // @ts-ignore - Ignoring type error for demo purposes
-                label={styles.placeholder || defaultStyles.Input.placeholder}
-                variant="outlined"
-                style={commonStyles}
-              />
-            );
-          case 'antd':
-            return (
-              <AntdInput
-                placeholder={styles.placeholder || defaultStyles.Input.placeholder}
-                style={commonStyles}
-              />
-            );
-          case 'shadcn':
-          default:
-            return (
-              <ShadcnInput
-                placeholder={styles.placeholder || defaultStyles.Input.placeholder}
-                style={commonStyles}
-              />
-            );
-        }
-      case 'Card':
-        switch (library) {
-          case 'mui':
-            return (
-              <div className="scale-[0.7] transform-origin-center">
-                <MuiCard style={{...commonStyles, maxWidth: '100%', maxHeight: '100%'}}>
-                  <span style={{ color: styles.textColor || defaultStyles.Card.textColor, padding: '8px', display: 'block', fontSize: '0.8rem' }}>
-                    {styles.cardContent || 'Card Content'}
-                  </span>
-                </MuiCard>
-              </div>
-            );
-          case 'antd':
-            return (
-              <div className="scale-[0.7] transform-origin-center">
-                <AntdCard 
-                  title={styles.cardTitle || "Card"} 
+    const handleResize = (width: string, height: string) => {
+      const newStyles = { ...componentStyles[name] };
+      newStyles.width = width;
+      
+      // For Circle, update both width and height to maintain aspect ratio
+      if (name === 'Circle') {
+        newStyles.height = width;
+      } else if (name !== 'Line') {
+        // For Line, we don't update height
+        newStyles.height = height;
+      }
+      
+      handleStyleChange(name, newStyles);
+    };
+
+    const component = (() => {
+      switch (name) {
+        case 'Button':
+          switch (library) {
+            case 'mui':
+              return (
+                <MuiButton variant="contained" color="primary" style={commonStyles}>
+                  {styles.buttonText === undefined || styles.buttonText === null ? 'Button' : styles.buttonText}
+                </MuiButton>
+              );
+            case 'antd':
+              return (
+                <AntdButton type="primary" style={commonStyles}>
+                  {styles.buttonText === undefined || styles.buttonText === null ? 'Button' : styles.buttonText}
+                </AntdButton>
+              );
+            case 'shadcn':
+            default:
+              return (
+                <ShadcnButton
+                  size={styles.size || defaultStyles.Button.size}
+                  variant={styles.variant || defaultStyles.Button.variant}
+                  style={commonStyles}
+                >
+                  {styles.buttonText === undefined || styles.buttonText === null ? 'Button' : styles.buttonText}
+                </ShadcnButton>
+              );
+          }
+        case 'Input':
+          switch (library) {
+            case 'mui':
+              return (
+                <MuiInput
+                  // @ts-ignore - Ignoring type error for demo purposes
+                  label={styles.placeholder || defaultStyles.Input.placeholder}
+                  variant="outlined"
+                  style={commonStyles}
+                />
+              );
+            case 'antd':
+              return (
+                <AntdInput
+                  placeholder={styles.placeholder || defaultStyles.Input.placeholder}
+                  style={commonStyles}
+                />
+              );
+            case 'shadcn':
+            default:
+              return (
+                <ShadcnInput
+                  placeholder={styles.placeholder || defaultStyles.Input.placeholder}
+                  style={commonStyles}
+                />
+              );
+          }
+        case 'Card':
+          switch (library) {
+            case 'mui':
+              return (
+                <div className="scale-[0.7] transform-origin-center">
+                  <MuiCard style={{...commonStyles, maxWidth: '100%', maxHeight: '100%'}}>
+                    <span style={{ color: styles.textColor || defaultStyles.Card.textColor, padding: '8px', display: 'block', fontSize: '0.8rem' }}>
+                      {styles.cardContent || 'Card Content'}
+                    </span>
+                  </MuiCard>
+                </div>
+              );
+            case 'antd':
+              return (
+                <div className="scale-[0.7] transform-origin-center">
+                  <AntdCard 
+                    title={styles.cardTitle || "Card"} 
+                    style={{...commonStyles, maxWidth: '100%', maxHeight: '100%'}}
+                    headStyle={{padding: '8px', fontSize: '0.9rem'}}
+                    bodyStyle={{padding: '8px'}}
+                  >
+                    <span style={{ color: styles.textColor || defaultStyles.Card.textColor, fontSize: '0.8rem' }}>
+                      {styles.cardContent || 'Card Content'}
+                    </span>
+                  </AntdCard>
+                </div>
+              );
+            case 'shadcn':
+            default:
+              return (
+                <ShadcnCard
+                  className="flex items-center justify-center p-2"
                   style={{...commonStyles, maxWidth: '100%', maxHeight: '100%'}}
-                  headStyle={{padding: '8px', fontSize: '0.9rem'}}
-                  bodyStyle={{padding: '8px'}}
                 >
                   <span style={{ color: styles.textColor || defaultStyles.Card.textColor, fontSize: '0.8rem' }}>
                     {styles.cardContent || 'Card Content'}
                   </span>
-                </AntdCard>
-              </div>
-            );
-          case 'shadcn':
-          default:
-            return (
-              <ShadcnCard
-                className="flex items-center justify-center p-2"
-                style={{...commonStyles, maxWidth: '100%', maxHeight: '100%'}}
-              >
-                <span style={{ color: styles.textColor || defaultStyles.Card.textColor, fontSize: '0.8rem' }}>
-                  {styles.cardContent || 'Card Content'}
-                </span>
-              </ShadcnCard>
-            );
-        }
-      default:
-        return null;
-    }
+                </ShadcnCard>
+              );
+          }
+        case 'Rectangle':
+          return (
+            <div
+              style={{
+                ...commonStyles,
+                width: '100%',
+                height: '100%',
+              }}
+              className="flex items-center justify-center"
+            />
+          );
+        case 'Circle':
+          return (
+            <div
+              style={{
+                ...commonStyles,
+                width: '100%',
+                height: '100%',
+                borderRadius: '9999px',
+              }}
+              className="flex items-center justify-center"
+            />
+          );
+        case 'Line':
+          return (
+            <div
+              style={{
+                ...commonStyles,
+                width: '100%',
+                height: '0',
+                borderTopWidth: styles.borderTopWidth || defaultStyles.Line.borderTopWidth,
+              }}
+              className="flex items-center justify-center"
+            />
+          );
+        default:
+          return null;
+      }
+    })();
+
+    // Wrap the component with ResizablePreview
+    return (
+      <ResizablePreview 
+        componentName={name} 
+        styles={styles} 
+        onResize={handleResize}
+        aspectRatio={name === 'Circle'}
+      >
+        {component}
+      </ResizablePreview>
+    );
   };
 
   const components = [
@@ -271,6 +483,18 @@ const ComponentList: React.FC<ComponentListProps> = ({ onDragStart }) => {
     {
       name: 'Card',
       icon: FiBox,
+    },
+    {
+      name: 'Rectangle',
+      icon: FiSquare,
+    },
+    {
+      name: 'Circle',
+      icon: FiCircle,
+    },
+    {
+      name: 'Line',
+      icon: FiMinus,
     },
   ];
 
@@ -307,9 +531,7 @@ const ComponentList: React.FC<ComponentListProps> = ({ onDragStart }) => {
                 </div>
               </div>
               <div className="flex items-center justify-center bg-gray-50 dark:bg-zinc-700 rounded-md p-3 h-20 overflow-hidden">
-                <div className="w-full h-full flex items-center justify-center">
-                  {renderPreview(component.name)}
-                </div>
+                {renderPreview(component.name)}
               </div>
               <div className="relative">
                 <ComponentStyler

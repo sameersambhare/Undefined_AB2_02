@@ -8,7 +8,7 @@ import { Card } from './ui/card';
 
 interface StyleOption {
   label: string;
-  type: 'select' | 'input' | 'color' | 'range';
+  type: 'select' | 'input' | 'color' | 'range' | 'color-with-transparent';
   options?: string[];
   value: string;
   min?: string;
@@ -16,6 +16,8 @@ interface StyleOption {
   step?: string;
   onChange: (value: string) => void;
   description?: string;
+  isTransparent?: boolean;
+  onTransparentChange?: (isTransparent: boolean) => void;
 }
 
 interface ComponentStylerProps {
@@ -211,9 +213,12 @@ const ComponentStyler: React.FC<ComponentStylerProps> = ({ componentType, onStyl
     },
     {
       label: 'Background Color',
-      type: 'color',
+      type: 'color-with-transparent',
       value: styles.backgroundColor,
+      isTransparent: styles.backgroundColor === 'transparent',
       onChange: (value) => handleStyleChange('backgroundColor', value),
+      onTransparentChange: (isTransparent) => 
+        handleStyleChange('backgroundColor', isTransparent ? 'transparent' : '#ffffff'),
       description: 'Set background color'
     },
     {
@@ -331,6 +336,56 @@ const ComponentStyler: React.FC<ComponentStylerProps> = ({ componentType, onStyl
             value: styles.cardContent !== undefined ? styles.cardContent : 'Card content goes here',
             onChange: (value) => handleStyleChange('cardContent', value),
             description: 'Card body text'
+          },
+        ];
+      case 'Rectangle':
+        return [
+          {
+            label: 'Width',
+            type: 'input',
+            value: styles.width || '100px',
+            onChange: (value) => handleStyleChange('width', value),
+            description: 'Rectangle width (px, %, rem)'
+          },
+          {
+            label: 'Height',
+            type: 'input',
+            value: styles.height || '60px',
+            onChange: (value) => handleStyleChange('height', value),
+            description: 'Rectangle height (px, %, rem)'
+          },
+        ];
+      case 'Circle':
+        return [
+          {
+            label: 'Size',
+            type: 'input',
+            value: styles.width || '80px',
+            onChange: (value) => {
+              handleStyleChange('width', value);
+              handleStyleChange('height', value);
+            },
+            description: 'Circle diameter (px, %, rem)'
+          },
+        ];
+      case 'Line':
+        return [
+          {
+            label: 'Length',
+            type: 'input',
+            value: styles.width || '100px',
+            onChange: (value) => handleStyleChange('width', value),
+            description: 'Line length (px, %, rem)'
+          },
+          {
+            label: 'Thickness',
+            type: 'range',
+            value: (styles.borderWidth || '2').replace('px', ''),
+            min: '1',
+            max: '10',
+            step: '1',
+            onChange: (value) => handleStyleChange('borderWidth', `${value}px`),
+            description: 'Line thickness (px)'
           },
         ];
       default:
@@ -488,6 +543,57 @@ const ComponentStyler: React.FC<ComponentStylerProps> = ({ componentType, onStyl
                                   placeholder="#000000"
                                   className="bg-white dark:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-700 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 font-mono"
                                 />
+                              </div>
+                            )}
+                            
+                            {option.type === 'color-with-transparent' && (
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="checkbox"
+                                    id={`transparent-${optionIndex}`}
+                                    checked={option.isTransparent}
+                                    onChange={(e) => option.onTransparentChange && option.onTransparentChange(e.target.checked)}
+                                    className="rounded border-gray-300 text-orange-500 focus:ring-orange-500"
+                                  />
+                                  <label 
+                                    htmlFor={`transparent-${optionIndex}`}
+                                    className="text-xs text-gray-600 dark:text-zinc-400"
+                                  >
+                                    Transparent
+                                  </label>
+                                </div>
+                                
+                                {!option.isTransparent && (
+                                  <div className="flex gap-2">
+                                    <div 
+                                      className="w-8 h-8 rounded border border-gray-300 dark:border-zinc-600 overflow-hidden relative"
+                                      style={{ 
+                                        backgroundColor: option.value || 'transparent',
+                                        backgroundImage: option.value === 'transparent' ? 
+                                          'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)' : 
+                                          'none',
+                                        backgroundSize: '10px 10px',
+                                        backgroundPosition: '0 0, 0 5px, 5px -5px, -5px 0px'
+                                      }}
+                                    >
+                                      <input 
+                                        type="color" 
+                                        value={option.value === 'transparent' ? '#ffffff' : (option.value || '#000000')} 
+                                        onChange={(e) => option.onChange(e.target.value)}
+                                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                                        disabled={option.isTransparent}
+                                      />
+                                    </div>
+                                    <Input
+                                      value={option.value === 'transparent' ? '' : option.value}
+                                      onChange={(e) => option.onChange(e.target.value)}
+                                      placeholder="#000000"
+                                      className="bg-white dark:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-700 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 font-mono"
+                                      disabled={option.isTransparent}
+                                    />
+                                  </div>
+                                )}
                               </div>
                             )}
                             
