@@ -50,6 +50,9 @@ const ComponentStyler: React.FC<ComponentStylerProps> = ({ componentType, onStyl
     variant: initialStyles.variant || 'default',
     size: initialStyles.size || 'default',
     placeholder: initialStyles.placeholder || '',
+    buttonText: initialStyles.buttonText || 'Button',
+    cardTitle: initialStyles.cardTitle || 'Card Title',
+    cardContent: initialStyles.cardContent || 'Card content goes here',
     
     // Effects
     opacity: initialStyles.opacity || '100',
@@ -180,14 +183,35 @@ const ComponentStyler: React.FC<ComponentStylerProps> = ({ componentType, onStyl
             value: styles.size,
             onChange: (value) => handleStyleChange('size', value),
           },
+          {
+            label: 'Button Text',
+            type: 'input',
+            value: styles.buttonText !== undefined ? styles.buttonText : 'Button',
+            onChange: (value) => handleStyleChange('buttonText', value),
+          },
         ];
       case 'Input':
         return [
           {
             label: 'Placeholder',
             type: 'input',
-            value: styles.placeholder,
+            value: styles.placeholder !== undefined ? styles.placeholder : 'Input field',
             onChange: (value) => handleStyleChange('placeholder', value),
+          },
+        ];
+      case 'Card':
+        return [
+          {
+            label: 'Card Title',
+            type: 'input',
+            value: styles.cardTitle !== undefined ? styles.cardTitle : 'Card Title',
+            onChange: (value) => handleStyleChange('cardTitle', value),
+          },
+          {
+            label: 'Card Content',
+            type: 'input',
+            value: styles.cardContent !== undefined ? styles.cardContent : 'Card content goes here',
+            onChange: (value) => handleStyleChange('cardContent', value),
           },
         ];
       default:

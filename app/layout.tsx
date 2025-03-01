@@ -1,5 +1,6 @@
 import './globals.css'
 import type { Metadata } from 'next'
+import UIProviders from './providers/ui-providers'
 
 export const metadata: Metadata = {
   title: 'UI Designer with AI Integration',
@@ -13,7 +14,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <UIProviders>
+          {children}
+        </UIProviders>
+      </body>
     </html>
   )
 }

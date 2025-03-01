@@ -1,29 +1,33 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import ComponentList from '../components/ComponentList';
 import DragDropEditor from '../components/DragDropEditor';
 import Navbar from '../components/Navbar';
 
-const CreateUI: React.FC = () => {
-  const handleDragStart = (event: React.DragEvent<HTMLDivElement>, component: string, styles: any) => {
+type UILibrary = 'shadcn' | 'mui' | 'antd';
+
+export default function CreateUI() {
+  const handleDragStart = (
+    event: React.DragEvent<HTMLDivElement>,
+    component: string,
+    styles: any,
+    library: UILibrary
+  ) => {
     event.dataTransfer.setData('componentType', component);
     event.dataTransfer.setData('componentStyles', JSON.stringify(styles || {}));
+    event.dataTransfer.setData('componentLibrary', library);
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      <main className="pt-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row gap-6">
-            <ComponentList onDragStart={handleDragStart} />
-            <DragDropEditor />
-          </div>
+      <main className="container mx-auto py-6 px-4">
+        <div className="flex flex-col md:flex-row gap-6">
+          <ComponentList onDragStart={handleDragStart} />
+          <DragDropEditor />
         </div>
       </main>
     </div>
   );
-};
-
-export default CreateUI;
+}
