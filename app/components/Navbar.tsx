@@ -24,6 +24,12 @@ const Navbar: React.FC = () => {
                             >
                                 <span>Create UI</span>
                             </Link>
+                            <Link 
+                                href="/ui-libraries" 
+                                className="flex items-center space-x-1 text-gray-600 hover:text-indigo-600 px-4 py-2 rounded-lg transition-colors"
+                            >
+                                <span>UI Libraries</span>
+                            </Link>
                         </div>
                     </div>
                     <div className="flex space-x-4">
