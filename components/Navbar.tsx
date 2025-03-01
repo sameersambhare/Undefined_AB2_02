@@ -35,7 +35,7 @@ const Navbar: React.FC = () => {
                 <div className="flex justify-between items-center h-16">
                     <div className="flex items-center space-x-8">
                         <Link href="/" className="text-2xl font-bold text-orange-500 dark:text-orange-400">
-                            UI Designer
+                            SnapUI
                         </Link>
                         <div className="hidden sm:flex space-x-4">
                             <Link 

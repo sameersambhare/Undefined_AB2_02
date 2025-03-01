@@ -13,7 +13,7 @@ const AboutPage: React.FC = () => {
           <div className="max-w-7xl mx-auto">
             <div className="text-center">
               <h1 className="text-5xl font-bold text-gray-900 dark:text-zinc-50 mb-6">
-                About <span className="text-orange-600 dark:text-orange-500">UI Designer</span>
+                About <span className="text-orange-600 dark:text-orange-500">SnapUI</span>
               </h1>
               <p className="text-xl text-gray-600 dark:text-zinc-300 mb-8 max-w-3xl mx-auto">
                 We're on a mission to make UI design accessible to everyone through the power of AI and intuitive design tools.

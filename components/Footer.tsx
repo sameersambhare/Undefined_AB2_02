@@ -20,7 +20,7 @@ const Footer: React.FC = () => {
           {/* Company Info */}
           <div className="col-span-1 md:col-span-1">
             <Link href="/" className="text-xl font-bold text-orange-500 dark:text-orange-400">
-              UI Designer
+              SnapUI
             </Link>
             <p className="mt-4 text-gray-600 dark:text-zinc-400 text-sm">
               Create beautiful user interfaces with AI-powered design tools.
@@ -141,7 +141,7 @@ const Footer: React.FC = () => {
 
         <div className="mt-12 pt-8 border-t border-gray-200 dark:border-zinc-800">
           <p className="text-center text-gray-500 dark:text-zinc-500 text-sm">
-            &copy; {year} UI Designer. All rights reserved.
+            &copy; {year} SnapUI. All rights reserved.
           </p>
         </div>
       </div>
