@@ -1,10 +1,12 @@
 import './globals.css'
-import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
 import UIProviders from './providers/ui-providers'
 
-export const metadata: Metadata = {
-  title: 'UI Designer with AI Integration',
-  description: 'A modern UI designer with AI integration',
+const inter = Inter({ subsets: ['latin'] })
+
+export const metadata = {
+  title: 'UI Builder',
+  description: 'Build beautiful UIs with drag and drop',
 }
 
 export default function RootLayout({
@@ -13,11 +15,9 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body>
-        <UIProviders>
-          {children}
-        </UIProviders>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.className} min-h-screen bg-gray-50`}>
+        <UIProviders>{children}</UIProviders>
       </body>
     </html>
   )
