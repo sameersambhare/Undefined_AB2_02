@@ -1,136 +1,101 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect, ReactNode } from 'react';
 import Link from 'next/link';
 import { FiGithub, FiTwitter, FiLinkedin, FiInstagram } from 'react-icons/fi';
 
-const Footer: React.FC = () => {
-  // Use state to store the year value
-  const [year, setYear] = React.useState<number>(2023); // Default fallback year
+interface SocialLinkProps {
+  href: string;
+  icon: ReactNode;
+  label: string;
+}
+
+interface FooterLinkProps {
+  href: string;
+  text: string;
+}
+
+const SocialLink = ({ href, icon, label }: SocialLinkProps) => (
+  <a href={href} className="text-gray-400 hover:text-orange-600 dark:text-zinc-400 dark:hover:text-orange-500 transition-colors">
+    <span className="w-5 h-5">{icon}</span>
+    <span className="sr-only">{label}</span>
+  </a>
+);
+
+const FooterLink = ({ href, text }: FooterLinkProps) => (
+  <li>
+    <Link href={href} className="text-gray-600 dark:text-zinc-400 hover:text-orange-600 dark:hover:text-orange-500 transition-colors">
+      {text}
+    </Link>
+  </li>
+);
+
+const Footer = () => {
+  const [currentYear, setCurrentYear] = useState('');
   
-  // Update the year on the client side after component mounts
-  React.useEffect(() => {
-    setYear(new Date().getFullYear());
+  useEffect(() => {
+    setCurrentYear(new Date().getFullYear().toString());
   }, []);
 
   return (
-    <footer className="bg-gray-50 border-t border-gray-200">
+    <footer className="bg-gray-50 dark:bg-gradient-to-t dark:from-zinc-950 dark:to-zinc-900 border-t border-gray-200 dark:border-zinc-800">
       <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          {/* Company Info */}
-          <div className="col-span-1 md:col-span-1">
-            <Link href="/" className="text-xl font-bold text-indigo-600">
-              UI Designer
+          <div>
+            <Link href="/" className="text-xl font-bold text-orange-600 dark:text-orange-500 flex items-center">
+              <span className="bg-orange-600 dark:bg-gradient-to-br dark:from-orange-600 dark:to-orange-700 text-white w-8 h-8 rounded flex items-center justify-center mr-2 text-lg">UI</span>
+              Designer
             </Link>
-            <p className="mt-4 text-gray-600 text-sm">
+            <p className="mt-4 text-gray-600 dark:text-zinc-400 text-sm">
               Create beautiful user interfaces with AI-powered design tools.
             </p>
             <div className="mt-6 flex space-x-4">
-              <a href="#" className="text-gray-400 hover:text-indigo-600 transition-colors">
-                <FiTwitter className="w-5 h-5" />
-                <span className="sr-only">Twitter</span>
-              </a>
-              <a href="#" className="text-gray-400 hover:text-indigo-600 transition-colors">
-                <FiGithub className="w-5 h-5" />
-                <span className="sr-only">GitHub</span>
-              </a>
-              <a href="#" className="text-gray-400 hover:text-indigo-600 transition-colors">
-                <FiLinkedin className="w-5 h-5" />
-                <span className="sr-only">LinkedIn</span>
-              </a>
-              <a href="#" className="text-gray-400 hover:text-indigo-600 transition-colors">
-                <FiInstagram className="w-5 h-5" />
-                <span className="sr-only">Instagram</span>
-              </a>
+              <SocialLink href="#" icon={<FiTwitter />} label="Twitter" />
+              <SocialLink href="#" icon={<FiGithub />} label="GitHub" />
+              <SocialLink href="#" icon={<FiLinkedin />} label="LinkedIn" />
+              <SocialLink href="#" icon={<FiInstagram />} label="Instagram" />
             </div>
           </div>
 
-          {/* Quick Links */}
-          <div className="col-span-1">
-            <h3 className="text-sm font-semibold text-gray-900 tracking-wider uppercase">
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-zinc-100 tracking-wider uppercase">
               Quick Links
             </h3>
             <ul className="mt-4 space-y-2">
-              <li>
-                <Link href="/" className="text-gray-600 hover:text-indigo-600 transition-colors">
-                  Home
-                </Link>
-              </li>
-              <li>
-                <Link href="/about" className="text-gray-600 hover:text-indigo-600 transition-colors">
-                  About Us
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact" className="text-gray-600 hover:text-indigo-600 transition-colors">
-                  Contact Us
-                </Link>
-              </li>
-              <li>
-                <Link href="/createui" className="text-gray-600 hover:text-indigo-600 transition-colors">
-                  Create UI
-                </Link>
-              </li>
+              <FooterLink href="/" text="Home" />
+              <FooterLink href="/about" text="About Us" />
+              <FooterLink href="/contact" text="Contact Us" />
+              <FooterLink href="/createui" text="Create UI" />
             </ul>
           </div>
 
-          {/* Resources */}
-          <div className="col-span-1">
-            <h3 className="text-sm font-semibold text-gray-900 tracking-wider uppercase">
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-zinc-100 tracking-wider uppercase">
               Resources
             </h3>
             <ul className="mt-4 space-y-2">
-              <li>
-                <a href="#" className="text-gray-600 hover:text-indigo-600 transition-colors">
-                  Documentation
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-gray-600 hover:text-indigo-600 transition-colors">
-                  Tutorials
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-gray-600 hover:text-indigo-600 transition-colors">
-                  Blog
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-gray-600 hover:text-indigo-600 transition-colors">
-                  Support
-                </a>
-              </li>
+              <FooterLink href="#" text="Documentation" />
+              <FooterLink href="#" text="Tutorials" />
+              <FooterLink href="#" text="Blog" />
+              <FooterLink href="#" text="Support" />
             </ul>
           </div>
 
-          {/* Legal */}
-          <div className="col-span-1">
-            <h3 className="text-sm font-semibold text-gray-900 tracking-wider uppercase">
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-zinc-100 tracking-wider uppercase">
               Legal
             </h3>
             <ul className="mt-4 space-y-2">
-              <li>
-                <a href="#" className="text-gray-600 hover:text-indigo-600 transition-colors">
-                  Privacy Policy
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-gray-600 hover:text-indigo-600 transition-colors">
-                  Terms of Service
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-gray-600 hover:text-indigo-600 transition-colors">
-                  Cookie Policy
-                </a>
-              </li>
+              <FooterLink href="#" text="Privacy Policy" />
+              <FooterLink href="#" text="Terms of Service" />
+              <FooterLink href="#" text="Cookie Policy" />
             </ul>
           </div>
         </div>
 
-        <div className="mt-12 pt-8 border-t border-gray-200">
-          <p className="text-center text-gray-500 text-sm">
-            &copy; {year} UI Designer. All rights reserved.
+        <div className="mt-12 pt-8 border-t border-gray-200 dark:border-zinc-800">
+          <p className="text-center text-gray-500 dark:text-zinc-500 text-sm">
+            &copy; {currentYear || '2023'} UI Designer. All rights reserved.
           </p>
         </div>
       </div>
@@ -138,4 +103,4 @@ const Footer: React.FC = () => {
   );
 };
 
-export default Footer; 
+export default Footer;
