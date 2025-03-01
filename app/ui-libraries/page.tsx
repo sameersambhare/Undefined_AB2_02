@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import UILibrarySelector from '../components/UILibrarySelector';
+import UILibrarySelector from '@/components/UILibrarySelector';
 
 type UILibrary = 'shadcn' | 'mui' | 'antd';
 

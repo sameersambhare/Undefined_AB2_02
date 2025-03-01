@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { FiMail, FiLock } from 'react-icons/fi';
@@ -9,7 +9,8 @@ import Footer from '@/components/Footer';
 import { useAuth } from '@/app/providers/AuthProvider';
 import { useToast } from '@/app/providers/ToastProvider';
 
-const SignIn: React.FC = () => {
+// Create a client component that uses useSearchParams
+const SignInForm = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [rememberMe, setRememberMe] = useState(false);
@@ -170,6 +171,22 @@ const SignIn: React.FC = () => {
             </div>
             <Footer />
         </div>
+    );
+};
+
+// Main page component with Suspense boundary
+const SignIn: React.FC = () => {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-zinc-950">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500 mx-auto"></div>
+                    <p className="mt-4 text-gray-600 dark:text-zinc-400">Loading...</p>
+                </div>
+            </div>
+        }>
+            <SignInForm />
+        </Suspense>
     );
 };
 
