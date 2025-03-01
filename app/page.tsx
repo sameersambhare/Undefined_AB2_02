@@ -2,6 +2,7 @@ import Link from 'next/link';
 import React from 'react';
 import { FiLayout, FiCode, FiZap } from 'react-icons/fi';
 import Navbar from './components/Navbar';
+import Footer from './components/Footer';
 
 const Home: React.FC = () => {
     return (
@@ -79,6 +80,8 @@ const Home: React.FC = () => {
                     </div>
                 </section>
             </main>
+            
+            <Footer />
         </div>
     );
 };

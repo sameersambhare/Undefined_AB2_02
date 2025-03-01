@@ -63,6 +63,9 @@ interface SavedLayout {
   savedAt: string;
 }
 
+// Add a counter for stable ID generation
+let componentIdCounter = 0;
+
 const DragDropEditor: React.FC = () => {
   const [components, setComponents] = useState<DroppedComponent[]>([]);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
@@ -78,11 +81,22 @@ const DragDropEditor: React.FC = () => {
   const [exportFormat, setExportFormat] = useState<string>('json');
   const [canvasRef, setCanvasRef] = useState<HTMLDivElement | null>(null);
 
-  // Load saved layouts from localStorage on component mount
+  // Load saved layouts from localStorage on component mount - safely with useEffect
   useEffect(() => {
-    const layouts = JSON.parse(localStorage.getItem('savedLayouts') || '[]');
-    setSavedLayouts(layouts);
+    try {
+      const layouts = JSON.parse(localStorage.getItem('savedLayouts') || '[]');
+      setSavedLayouts(layouts);
+    } catch (error) {
+      console.error('Error loading saved layouts:', error);
+      setSavedLayouts([]);
+    }
   }, []);
+
+  // Use a stable ID generation method that doesn't rely on Math.random() during SSR
+  const generateComponentId = (componentType: string) => {
+    componentIdCounter += 1;
+    return `${componentType}-${componentIdCounter}`;
+  };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -172,7 +186,7 @@ const DragDropEditor: React.FC = () => {
     };
 
     const newComponent: DroppedComponent = {
-      id: `${componentType}-${Date.now()}`,
+      id: generateComponentId(componentType),
       type: componentType,
       position: { x, y },
       styles: mergedStyles,
@@ -199,42 +213,53 @@ const DragDropEditor: React.FC = () => {
   const handleSave = () => {
     if (!layoutName.trim()) return;
 
+    // Create the saved layout object
     const savedLayout: SavedLayout = {
       name: layoutName,
       components: components,
-      savedAt: new Date().toISOString(),
+      savedAt: new Date().toISOString(), // This is fine in a client component
     };
 
-    const existingLayouts = JSON.parse(localStorage.getItem('savedLayouts') || '[]');
-    
-    // Check if layout with same name exists and replace it
-    const layoutIndex = existingLayouts.findIndex((layout: SavedLayout) => layout.name === layoutName);
-    let updatedLayouts;
-    
-    if (layoutIndex >= 0) {
-      updatedLayouts = [...existingLayouts];
-      updatedLayouts[layoutIndex] = savedLayout;
-    } else {
-      updatedLayouts = [...existingLayouts, savedLayout];
+    try {
+      const existingLayouts = JSON.parse(localStorage.getItem('savedLayouts') || '[]');
+      
+      // Check if layout with same name exists and replace it
+      const layoutIndex = existingLayouts.findIndex((layout: SavedLayout) => layout.name === layoutName);
+      let updatedLayouts;
+      
+      if (layoutIndex >= 0) {
+        updatedLayouts = [...existingLayouts];
+        updatedLayouts[layoutIndex] = savedLayout;
+      } else {
+        updatedLayouts = [...existingLayouts, savedLayout];
+      }
+      
+      localStorage.setItem('savedLayouts', JSON.stringify(updatedLayouts));
+      setSavedLayouts(updatedLayouts);
+      
+      setShowSaveDialog(false);
+      setLayoutName('');
+    } catch (error) {
+      console.error('Error saving layout:', error);
+      alert('There was an error saving your layout. Please try again.');
     }
-    
-    localStorage.setItem('savedLayouts', JSON.stringify(updatedLayouts));
-    setSavedLayouts(updatedLayouts);
-    
-    setShowSaveDialog(false);
-    setLayoutName('');
   };
 
   const handleLoad = () => {
     if (!selectedLayout) return;
     
-    const layout = savedLayouts.find(layout => layout.name === selectedLayout);
-    if (layout) {
-      setComponents(layout.components);
-      setSelectedComponent(null);
+    try {
+      const layout = savedLayouts.find(layout => layout.name === selectedLayout);
+      if (layout) {
+        setComponents(layout.components);
+        setSelectedComponent(null);
+      }
+      
+      setShowLoadDialog(false);
+    } catch (error) {
+      console.error('Error loading layout:', error);
+      alert('There was an error loading your layout. Please try again.');
     }
-    
-    setShowLoadDialog(false);
   };
 
   const handleExport = () => {
@@ -244,12 +269,15 @@ const DragDropEditor: React.FC = () => {
     let fileName;
     let fileType;
     
+    // Get current timestamp for export
+    const exportTimestamp = new Date().toISOString();
+    
     switch (exportFormat) {
       case 'json':
         exportData = JSON.stringify({
           name: layoutName || 'Untitled Layout',
           components: components,
-          exportedAt: new Date().toISOString()
+          exportedAt: exportTimestamp
         }, null, 2);
         fileName = `${layoutName || 'ui-layout'}.json`;
         fileType = 'application/json';
@@ -1036,7 +1064,7 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
                   <SelectContent>
                     {savedLayouts.map((layout) => (
                       <SelectItem key={layout.name} value={layout.name}>
-                        {layout.name} ({new Date(layout.savedAt).toLocaleDateString()})
+                        {layout.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -1095,8 +1123,6 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
                       <SelectItem value="json">JSON</SelectItem>
                       <SelectItem value="html">HTML</SelectItem>
                       <SelectItem value="react">React Component</SelectItem>
-                      <SelectItem value="jpg">JPG Image</SelectItem>
-                      <SelectItem value="pdf">PDF Document</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
