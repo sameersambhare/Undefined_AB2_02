@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { verifyToken } from './lib/jwt';
 
 // Define which routes require authentication
 const protectedRoutes = ['/createui', '/profile'];
@@ -16,12 +15,16 @@ export function middleware(request: NextRequest) {
     // Get the token from cookies
     const token = request.cookies.get('auth_token')?.value;
     
-    // If no token exists or token is invalid, redirect to signin
-    if (!token || !verifyToken(token)) {
+    // If no token exists, redirect to signin
+    if (!token) {
       const url = new URL('/signin', request.url);
       url.searchParams.set('callbackUrl', encodeURI(pathname));
       return NextResponse.redirect(url);
     }
+    
+    // We don't verify the token here because jsonwebtoken uses Node.js crypto
+    // which is not supported in the Edge Runtime
+    // The actual verification will happen in the API routes and client components
   }
   
   return NextResponse.next();

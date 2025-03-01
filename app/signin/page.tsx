@@ -7,6 +7,7 @@ import { FiMail, FiLock } from 'react-icons/fi';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useAuth } from '@/app/providers/AuthProvider';
+import { useToast } from '@/app/providers/ToastProvider';
 
 const SignIn: React.FC = () => {
     const [email, setEmail] = useState('');
@@ -15,6 +16,7 @@ const SignIn: React.FC = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     
     const { login, user, error, clearError, isLoading } = useAuth();
+    const toast = useToast();
     const router = useRouter();
     const searchParams = useSearchParams();
     const callbackUrl = searchParams?.get('callbackUrl') || '/';
@@ -31,10 +33,18 @@ const SignIn: React.FC = () => {
         clearError();
     }, [clearError]);
     
+    // Show toast if redirected from protected route
+    useEffect(() => {
+        if (searchParams?.get('callbackUrl') && !user) {
+            toast.info('Please sign in to access that page');
+        }
+    }, [searchParams, user, toast]);
+    
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         
         if (!email || !password) {
+            toast.warning('Please enter both email and password');
             return;
         }
         
@@ -45,6 +55,7 @@ const SignIn: React.FC = () => {
             // Successful login will trigger the useEffect above to redirect
         } catch (err) {
             console.error('Login error:', err);
+            toast.error('Failed to sign in. Please try again.');
         } finally {
             setIsSubmitting(false);
         }
