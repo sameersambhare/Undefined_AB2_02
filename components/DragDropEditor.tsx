@@ -1,6 +1,6 @@
 'use client'
-import React, { useState, useEffect } from "react";
-import { FiMove, FiTrash2, FiSave, FiEye, FiEdit2, FiDownload, FiList, FiCode, FiRotateCcw, FiRotateCw } from 'react-icons/fi';
+import React, { useState, useEffect, useRef } from "react";
+import { FiMove, FiTrash2, FiSave, FiEye, FiEdit2, FiDownload, FiList, FiCode, FiRotateCcw, FiRotateCw, FiCornerRightDown } from 'react-icons/fi';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Card } from './ui/card';
@@ -65,6 +65,105 @@ interface SavedLayout {
 
 // Add a counter for stable ID generation
 let componentIdCounter = 0;
+
+// Resizable Component Wrapper
+interface ResizableComponentProps {
+  children: React.ReactNode;
+  component: DroppedComponent;
+  isSelected: boolean;
+  isPreviewMode: boolean;
+  onResize: (id: string, width: string, height: string) => void;
+}
+
+const ResizableComponent: React.FC<ResizableComponentProps> = ({
+  children,
+  component,
+  isSelected,
+  isPreviewMode,
+  onResize
+}) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isResizing, setIsResizing] = useState(false);
+  const [startPos, setStartPos] = useState({ x: 0, y: 0 });
+  const [startSize, setStartSize] = useState({ width: 0, height: 0 });
+  
+  // Handle resize start
+  const handleResizeStart = (e: React.MouseEvent) => {
+    if (isPreviewMode) return;
+    
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (containerRef.current) {
+      const { width, height } = containerRef.current.getBoundingClientRect();
+      setStartSize({ width, height });
+      setStartPos({ x: e.clientX, y: e.clientY });
+      setIsResizing(true);
+    }
+  };
+
+  // Handle resize move
+  const handleResizeMove = (e: MouseEvent) => {
+    if (!isResizing) return;
+    
+    const deltaX = e.clientX - startPos.x;
+    const deltaY = e.clientY - startPos.y;
+    
+    let newWidth = Math.max(20, startSize.width + deltaX);
+    let newHeight = Math.max(20, startSize.height + deltaY);
+    
+    // Maintain aspect ratio for Circle
+    if (component.type === 'Circle') {
+      newHeight = newWidth;
+    }
+    
+    // Special case for Line component
+    if (component.type === 'Line') {
+      newHeight = 0;
+    }
+    
+    // Update component size
+    onResize(component.id, `${newWidth}px`, `${newHeight}px`);
+  };
+
+  // Handle resize end
+  const handleResizeEnd = () => {
+    setIsResizing(false);
+  };
+
+  // Add and remove event listeners
+  useEffect(() => {
+    if (isResizing) {
+      window.addEventListener('mousemove', handleResizeMove);
+      window.addEventListener('mouseup', handleResizeEnd);
+    }
+    
+    return () => {
+      window.removeEventListener('mousemove', handleResizeMove);
+      window.removeEventListener('mouseup', handleResizeEnd);
+    };
+  }, [isResizing, startPos, startSize]);
+
+  return (
+    <div 
+      ref={containerRef}
+      className="relative"
+    >
+      {children}
+      
+      {/* Resize handle - only show when selected and not in preview mode */}
+      {isSelected && !isPreviewMode && (
+        <div 
+          className="absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize flex items-center justify-center bg-white dark:bg-zinc-700 border border-gray-300 dark:border-zinc-600 rounded-sm shadow-sm z-10"
+          onMouseDown={handleResizeStart}
+          title="Resize"
+        >
+          <FiCornerRightDown className="w-3 h-3 text-orange-500" />
+        </div>
+      )}
+    </div>
+  );
+};
 
 const DragDropEditor: React.FC = () => {
   const [components, setComponents] = useState<DroppedComponent[]>([]);
@@ -206,6 +305,38 @@ const DragDropEditor: React.FC = () => {
         textColor: "#374151", // gray-700
         cardTitle: "Card Title", // Add default card title
         cardContent: "Card Content", // Add default card content
+      },
+      Rectangle: {
+        backgroundColor: "#f97316", // orange-500
+        borderColor: "#f97316", // orange-500
+        borderWidth: "2px",
+        borderStyle: "solid",
+        borderRadius: "0.375rem", // rounded-md
+        width: "100px",
+        height: "60px",
+        shadow: "sm",
+        opacity: 100,
+      },
+      Circle: {
+        backgroundColor: "#f97316", // orange-500
+        borderColor: "#f97316", // orange-500
+        borderWidth: "2px",
+        borderStyle: "solid",
+        borderRadius: "9999px", // fully rounded
+        width: "80px",
+        height: "80px",
+        shadow: "sm",
+        opacity: 100,
+      },
+      Line: {
+        backgroundColor: "transparent",
+        borderColor: "#f97316", // orange-500
+        borderWidth: "2px",
+        borderStyle: "solid",
+        width: "100px",
+        height: "0",
+        shadow: "none",
+        opacity: 100,
       }
     };
 
@@ -669,6 +800,25 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
     updateHistory(newComponents); // Add to history
   };
 
+  const handleComponentResize = (id: string, width: string, height: string) => {
+    const newComponents = components.map(comp => {
+      if (comp.id === id) {
+        const newStyles = { ...comp.styles, width, height };
+        
+        // For Circle, ensure width and height are the same
+        if (comp.type === 'Circle') {
+          newStyles.height = width;
+        }
+        
+        return { ...comp, styles: newStyles };
+      }
+      return comp;
+    });
+    
+    setComponents(newComponents);
+    updateHistory(newComponents);
+  };
+
   const renderComponent = (component: DroppedComponent) => {
     const { type, styles, id, library = 'shadcn' } = component;
     const isSelected = selectedComponent === id && !isPreviewMode;
@@ -905,6 +1055,113 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
               )}
             </div>
           );
+        case 'Rectangle':
+          return (
+            <div className={wrapperClasses}
+              onClick={(e) => !isPreviewMode && handleComponentClick(id, e)}
+              draggable={!isPreviewMode}
+              onDragStart={(e) => handleComponentDragStart(e, id)}>
+              {isSelected && !isPreviewMode && (
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-md z-50 bg-red-500 hover:bg-red-600 border-2 border-white"
+                  onClick={handleDelete}
+                >
+                  <FiTrash2 className="h-3 w-3 text-white" />
+                </Button>
+              )}
+              <div
+                style={{
+                  ...commonStyles,
+                  width: styles.width || "100px",
+                  height: styles.height || "60px",
+                }}
+                className="dark:bg-zinc-800 dark:border-zinc-700"
+              />
+              {isSelected && (
+                <div className="absolute top-full left-0 right-0 mt-2 z-10">
+                  <ComponentStyler
+                    componentType={type}
+                    onStyleChange={(styles) => handleStyleChange(id, styles)}
+                    initialStyles={component.styles}
+                  />
+                </div>
+              )}
+            </div>
+          );
+        case 'Circle':
+          return (
+            <div className={wrapperClasses}
+              onClick={(e) => !isPreviewMode && handleComponentClick(id, e)}
+              draggable={!isPreviewMode}
+              onDragStart={(e) => handleComponentDragStart(e, id)}>
+              {isSelected && !isPreviewMode && (
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-md z-50 bg-red-500 hover:bg-red-600 border-2 border-white"
+                  onClick={handleDelete}
+                >
+                  <FiTrash2 className="h-3 w-3 text-white" />
+                </Button>
+              )}
+              <div
+                style={{
+                  ...commonStyles,
+                  width: styles.width || "80px",
+                  height: styles.height || "80px",
+                  borderRadius: "9999px",
+                }}
+                className="dark:bg-zinc-800 dark:border-zinc-700"
+              />
+              {isSelected && (
+                <div className="absolute top-full left-0 right-0 mt-2 z-10">
+                  <ComponentStyler
+                    componentType={type}
+                    onStyleChange={(styles) => handleStyleChange(id, styles)}
+                    initialStyles={component.styles}
+                  />
+                </div>
+              )}
+            </div>
+          );
+        case 'Line':
+          return (
+            <div className={wrapperClasses}
+              onClick={(e) => !isPreviewMode && handleComponentClick(id, e)}
+              draggable={!isPreviewMode}
+              onDragStart={(e) => handleComponentDragStart(e, id)}>
+              {isSelected && !isPreviewMode && (
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-md z-50 bg-red-500 hover:bg-red-600 border-2 border-white"
+                  onClick={handleDelete}
+                >
+                  <FiTrash2 className="h-3 w-3 text-white" />
+                </Button>
+              )}
+              <div
+                style={{
+                  ...commonStyles,
+                  width: styles.width || "100px",
+                  height: "0",
+                  borderTopWidth: styles.borderWidth || "2px",
+                }}
+                className="dark:border-zinc-400"
+              />
+              {isSelected && (
+                <div className="absolute top-full left-0 right-0 mt-2 z-10">
+                  <ComponentStyler
+                    componentType={type}
+                    onStyleChange={(styles) => handleStyleChange(id, styles)}
+                    initialStyles={component.styles}
+                  />
+                </div>
+              )}
+            </div>
+          );
         default:
           return <div>Unknown Component</div>;
       }
@@ -938,16 +1195,21 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
         {components.map((component) => (
           <div
             key={component.id}
-            className={`absolute ${isPreviewMode ? '' : 'cursor-move'} ${
-              selectedComponent === component.id && !isPreviewMode ? 'ring-2 ring-orange-500 dark:ring-orange-400' : ''
-            }`}
+            className={`absolute ${isPreviewMode ? '' : 'cursor-move'}`}
             style={{
               left: `${component.position.x}px`,
               top: `${component.position.y}px`,
               transform: 'translate(-50%, -50%)',
             }}
           >
-            {renderComponent(component)}
+            <ResizableComponent
+              component={component}
+              isSelected={selectedComponent === component.id}
+              isPreviewMode={isPreviewMode}
+              onResize={handleComponentResize}
+            >
+              {renderComponent(component)}
+            </ResizableComponent>
           </div>
         ))}
       </div>
