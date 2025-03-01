@@ -233,20 +233,25 @@ const ComponentStyler: React.FC<ComponentStylerProps> = ({ componentType, onStyl
           <FiSettings className="w-4 h-4" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 max-h-[80vh] overflow-y-auto">
+      <PopoverContent className="w-80 max-h-[80vh] overflow-y-auto backdrop-blur-md border-none">
         <div className="space-y-6">
-          <h4 className="font-medium leading-none">{componentType} Styles</h4>
+          <div className="flex items-center justify-between border-b pb-4">
+            <h4 className="font-medium text-base">{componentType} Styles</h4>
+          </div>
           {styleCategories.map((category, categoryIndex) => (
             category.options.length > 0 && (
               <div key={categoryIndex} className="space-y-4">
-                <h5 className="text-sm font-medium text-gray-500">{category.title}</h5>
-                <div className="space-y-3">
+                <h5 className="text-sm font-medium text-gray-500 flex items-center gap-2">
+                  {category.title}
+                  <div className="h-px flex-1 bg-gray-100"></div>
+                </h5>
+                <div className="space-y-4 px-1">
                   {category.options.map((option, index) => (
-                    <div key={index} className="space-y-1">
-                      <Label className="flex justify-between">
+                    <div key={index} className="space-y-1.5">
+                      <Label className="flex justify-between text-sm">
                         {option.label}
                         {option.type === 'range' && (
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-gray-500 tabular-nums">
                             {option.value}
                             {option.label.includes('Opacity') ? '%' : ''}
                           </span>
@@ -254,7 +259,7 @@ const ComponentStyler: React.FC<ComponentStylerProps> = ({ componentType, onStyl
                       </Label>
                       {option.type === 'select' && (
                         <select
-                          className="w-full p-2 border rounded-md bg-white"
+                          className="w-full p-2 text-sm border rounded-md bg-white/50 backdrop-blur-sm hover:bg-white/80 transition-colors"
                           value={option.value}
                           onChange={(e) => option.onChange(e.target.value)}
                         >
@@ -270,6 +275,7 @@ const ComponentStyler: React.FC<ComponentStylerProps> = ({ componentType, onStyl
                           value={option.value}
                           onChange={(e) => option.onChange(e.target.value)}
                           placeholder={`Enter ${option.label.toLowerCase()}`}
+                          className="bg-white/50 backdrop-blur-sm hover:bg-white/80 transition-colors"
                         />
                       )}
                       {option.type === 'color' && (
@@ -278,17 +284,18 @@ const ComponentStyler: React.FC<ComponentStylerProps> = ({ componentType, onStyl
                             type="color"
                             value={option.value || '#000000'}
                             onChange={(e) => option.onChange(e.target.value)}
-                            className="w-12 h-8 p-1"
+                            className="w-12 h-9 p-1 bg-white/50 backdrop-blur-sm hover:bg-white/80 transition-colors"
                           />
                           <Input
                             value={option.value}
                             onChange={(e) => option.onChange(e.target.value)}
                             placeholder="#000000"
+                            className="bg-white/50 backdrop-blur-sm hover:bg-white/80 transition-colors"
                           />
                         </div>
                       )}
                       {option.type === 'range' && (
-                        <div className="flex gap-2 items-center">
+                        <div className="flex gap-2 items-center pt-1">
                           <input
                             type="range"
                             min={option.min}
@@ -296,7 +303,7 @@ const ComponentStyler: React.FC<ComponentStylerProps> = ({ componentType, onStyl
                             step={option.step}
                             value={option.value}
                             onChange={(e) => option.onChange(e.target.value)}
-                            className="w-full"
+                            className="w-full accent-blue-600"
                           />
                         </div>
                       )}
