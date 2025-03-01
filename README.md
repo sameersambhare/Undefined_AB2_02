@@ -85,8 +85,6 @@ A powerful web application that allows users to design beautiful UI components w
   - JWT Authentication
 
 - **Tools & Libraries**:
-  - html2canvas (for image export)
-  - jsPDF (for PDF export)
   - React DnD (for drag and drop functionality)
 
 ## 🤝 Contributing
