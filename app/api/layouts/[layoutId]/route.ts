@@ -6,10 +6,10 @@ import { verifyToken } from '@/lib/jwt';
 // GET - Retrieve a specific layout by ID
 export async function GET(
   req: NextRequest,
-  { params }: { params: { layoutId: string } }
+  context: { params: { layoutId: string } }
 ) {
   try {
-    const layoutId = params.layoutId;
+    const layoutId = context.params.layoutId;
     
     // Get the authorization header
     const authHeader = req.headers.get('authorization');
@@ -76,10 +76,10 @@ export async function GET(
 // PUT - Update a specific layout by ID
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { layoutId: string } }
+  context: { params: { layoutId: string } }
 ) {
   try {
-    const layoutId = params.layoutId;
+    const layoutId = context.params.layoutId;
     
     // Get the authorization header
     const authHeader = req.headers.get('authorization');
@@ -170,10 +170,10 @@ export async function PUT(
 // DELETE - Delete a specific layout by ID
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { layoutId: string } }
+  context: { params: { layoutId: string } }
 ) {
   try {
-    const layoutId = params.layoutId;
+    const layoutId = context.params.layoutId;
     
     // Get the authorization header
     const authHeader = req.headers.get('authorization');
