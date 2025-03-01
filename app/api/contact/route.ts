@@ -1,6 +1,22 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/app/lib/mongodb';
 import Contact from '@/app/models/Contact';
+import { thankYouEmailTemplate } from '@/app/lib/emailTemplates';
+import nodemailer from 'nodemailer';
+
+// Create a transporter using Gmail SMTP with regular password
+const transporter = nodemailer.createTransport({
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false, // true for 465, false for other ports
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASSWORD
+  },
+  tls: {
+    rejectUnauthorized: false
+  }
+});
 
 export async function POST(req: Request) {
   try {
@@ -46,6 +62,22 @@ export async function POST(req: Request) {
       subject,
       message
     });
+
+    // Send thank you email
+    const { subject: emailSubject, body: emailBody } = thankYouEmailTemplate(name);
+    
+    try {
+      await transporter.sendMail({
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject: emailSubject,
+        text: emailBody
+      });
+      console.log('Thank you email sent successfully');
+    } catch (error) {
+      console.error('Error sending thank you email:', error);
+      // Don't return error response here as the contact was still saved
+    }
 
     console.log('Successfully created contact submission:', contact);
 
