@@ -1,12 +1,55 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { FiMail, FiLock } from 'react-icons/fi';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { useAuth } from '@/app/providers/AuthProvider';
 
 const SignIn: React.FC = () => {
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [rememberMe, setRememberMe] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    
+    const { login, user, error, clearError, isLoading } = useAuth();
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const callbackUrl = searchParams?.get('callbackUrl') || '/';
+    
+    // Redirect if already logged in
+    useEffect(() => {
+        if (user) {
+            router.push(callbackUrl);
+        }
+    }, [user, router, callbackUrl]);
+    
+    // Clear auth errors when component mounts
+    useEffect(() => {
+        clearError();
+    }, [clearError]);
+    
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        
+        if (!email || !password) {
+            return;
+        }
+        
+        setIsSubmitting(true);
+        
+        try {
+            await login(email, password);
+            // Successful login will trigger the useEffect above to redirect
+        } catch (err) {
+            console.error('Login error:', err);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-zinc-950">
             <Navbar />
@@ -27,7 +70,14 @@ const SignIn: React.FC = () => {
                             </Link>
                         </p>
                     </div>
-                    <form className="mt-8 space-y-6" action="#" method="POST">
+                    
+                    {error && (
+                        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-300 px-4 py-3 rounded-lg">
+                            {error}
+                        </div>
+                    )}
+                    
+                    <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
                         <div className="rounded-md shadow-sm space-y-4">
                             <div>
                                 <label htmlFor="email" className="sr-only">
@@ -45,6 +95,8 @@ const SignIn: React.FC = () => {
                                         required
                                         className="appearance-none relative block w-full px-3 py-3 pl-10 border border-gray-300 dark:border-zinc-700 placeholder-gray-500 dark:placeholder-zinc-500 text-gray-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 dark:focus:ring-orange-600 focus:border-orange-500 dark:focus:border-orange-600 focus:z-10 sm:text-sm"
                                         placeholder="Email address"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
                                     />
                                 </div>
                             </div>
@@ -64,6 +116,8 @@ const SignIn: React.FC = () => {
                                         required
                                         className="appearance-none relative block w-full px-3 py-3 pl-10 border border-gray-300 dark:border-zinc-700 placeholder-gray-500 dark:placeholder-zinc-500 text-gray-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 dark:focus:ring-orange-600 focus:border-orange-500 dark:focus:border-orange-600 focus:z-10 sm:text-sm"
                                         placeholder="Password"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
                                     />
                                 </div>
                             </div>
@@ -76,6 +130,8 @@ const SignIn: React.FC = () => {
                                     name="remember-me"
                                     type="checkbox"
                                     className="h-4 w-4 text-orange-600 dark:text-orange-500 focus:ring-orange-500 dark:focus:ring-orange-600 border-gray-300 dark:border-zinc-700 rounded"
+                                    checked={rememberMe}
+                                    onChange={(e) => setRememberMe(e.target.checked)}
                                 />
                                 <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900 dark:text-zinc-300">
                                     Remember me
@@ -91,10 +147,11 @@ const SignIn: React.FC = () => {
 
                         <div>
                             <button
-                                type="submit"
+                                type="submit" 
                                 className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-orange-600 hover:bg-orange-700 dark:bg-gradient-to-r dark:from-orange-700 dark:to-orange-600 dark:hover:from-orange-600 dark:hover:to-orange-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 dark:focus:ring-orange-600 transition-all"
+                                disabled={isSubmitting}
                             >
-                                Sign in
+                                {isSubmitting ? 'Signing in...' : 'Sign in'}
                             </button>
                         </div>
                     </form>
