@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { FiSquare, FiType, FiBox, FiCircle, FiMinus, FiCornerRightDown } from 'react-icons/fi';
+import React, { useState } from 'react';
+import { FiSquare, FiType, FiBox, FiCircle, FiMinus, FiCornerRightDown, FiChevronDown, FiUser, FiTag, FiAlignLeft } from 'react-icons/fi';
 import { Button as ShadcnButton } from './ui/button';
 import { Input as ShadcnInput } from './ui/input';
 import { Card as ShadcnCard } from './ui/card';
@@ -52,6 +52,9 @@ interface StyleProperties {
   buttonText?: string; // Add button text property
   cardTitle?: string; // Add card title property
   cardContent?: string; // Add card content property
+  dropdownText?: string; // Add dropdown text property
+  badgeText?: string; // Add badge text property
+  avatarText?: string; // Add avatar text property
   [key: string]: any; // Allow for additional properties
 }
 
@@ -62,114 +65,13 @@ interface DefaultStylesType {
   Rectangle: StyleProperties;
   Circle: StyleProperties;
   Line: StyleProperties;
+  Dropdown: StyleProperties;
+  Badge: StyleProperties;
+  Avatar: StyleProperties;
+  Divider: StyleProperties;
+  Text: StyleProperties;
   [key: string]: StyleProperties; // Allow indexing with string
 }
-
-// Resizable Preview Component
-interface ResizablePreviewProps {
-  children: React.ReactNode;
-  componentName: string;
-  styles: StyleProperties;
-  onResize: (width: string, height: string) => void;
-  aspectRatio?: boolean;
-}
-
-const ResizablePreview: React.FC<ResizablePreviewProps> = ({ 
-  children, 
-  componentName, 
-  styles, 
-  onResize,
-  aspectRatio = false
-}) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [isResizing, setIsResizing] = useState(false);
-  const [startPos, setStartPos] = useState({ x: 0, y: 0 });
-  const [startSize, setStartSize] = useState({ width: 0, height: 0 });
-  
-  // Get initial dimensions from styles
-  const getInitialDimensions = () => {
-    const width = styles.width ? parseInt(styles.width) : 100;
-    const height = styles.height ? parseInt(styles.height) : 60;
-    return { width, height };
-  };
-
-  // Handle resize start
-  const handleResizeStart = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    if (containerRef.current) {
-      const { width, height } = containerRef.current.getBoundingClientRect();
-      setStartSize({ width, height });
-      setStartPos({ x: e.clientX, y: e.clientY });
-      setIsResizing(true);
-    }
-  };
-
-  // Handle resize move
-  const handleResizeMove = (e: MouseEvent) => {
-    if (!isResizing) return;
-    
-    const deltaX = e.clientX - startPos.x;
-    const deltaY = e.clientY - startPos.y;
-    
-    let newWidth = Math.max(20, startSize.width + deltaX);
-    let newHeight = Math.max(20, startSize.height + deltaY);
-    
-    // Maintain aspect ratio if needed (for Circle)
-    if (aspectRatio) {
-      newHeight = newWidth;
-    }
-    
-    // Special case for Line component
-    if (componentName === 'Line') {
-      newHeight = 0;
-    }
-    
-    // Update component size
-    onResize(`${newWidth}px`, `${newHeight}px`);
-  };
-
-  // Handle resize end
-  const handleResizeEnd = () => {
-    setIsResizing(false);
-  };
-
-  // Add and remove event listeners
-  useEffect(() => {
-    if (isResizing) {
-      window.addEventListener('mousemove', handleResizeMove);
-      window.addEventListener('mouseup', handleResizeEnd);
-    }
-    
-    return () => {
-      window.removeEventListener('mousemove', handleResizeMove);
-      window.removeEventListener('mouseup', handleResizeEnd);
-    };
-  }, [isResizing, startPos, startSize]);
-
-  return (
-    <div 
-      ref={containerRef}
-      className="relative w-full h-full flex items-center justify-center"
-      style={{ 
-        width: styles.width || 'auto',
-        height: componentName === 'Line' ? 'auto' : (styles.height || 'auto'),
-      }}
-    >
-      {children}
-      
-      {/* Resize handle */}
-      <div 
-        className="absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-        onMouseDown={handleResizeStart}
-        title="Resize"
-      >
-        <FiCornerRightDown className="w-3 h-3 text-orange-500" />
-      </div>
-    </div>
-  );
-};
 
 // Default styles for components
 const defaultStyles: DefaultStylesType = {
@@ -247,7 +149,7 @@ const defaultStyles: DefaultStylesType = {
   Line: {
     backgroundColor: "transparent",
     borderColor: "#f97316", // orange-500
-    borderWidth: "0",
+    borderWidth: "2px",
     borderTopWidth: "2px",
     borderStyle: "solid",
     width: "100px",
@@ -255,6 +157,75 @@ const defaultStyles: DefaultStylesType = {
     shadow: "none",
     opacity: 100,
     library: "shadcn", // Default library
+  },
+  Dropdown: {
+    backgroundColor: "#ffffff",
+    textColor: "#374151", // gray-700
+    borderColor: "#d1d5db", // gray-300
+    borderWidth: "1px",
+    borderStyle: "solid",
+    borderRadius: "0.375rem", // rounded-md
+    padding: "0.5rem 0.75rem",
+    fontSize: "0.875rem", // text-sm
+    width: "100%",
+    height: "auto",
+    shadow: "sm",
+    library: "shadcn", // Default library
+    dropdownText: "Select option", // Default dropdown text
+  },
+  Badge: {
+    backgroundColor: "#f97316", // orange-500
+    textColor: "#ffffff",
+    borderColor: "transparent",
+    borderWidth: "1px",
+    borderStyle: "solid",
+    borderRadius: "9999px", // fully rounded
+    padding: "0.25rem 0.5rem",
+    fontSize: "0.75rem", // text-xs
+    fontWeight: "500", // font-medium
+    width: "auto",
+    height: "auto",
+    shadow: "none",
+    library: "shadcn", // Default library
+    badgeText: "New", // Default badge text
+  },
+  Avatar: {
+    backgroundColor: "#f97316", // orange-500
+    textColor: "#ffffff",
+    borderColor: "transparent",
+    borderWidth: "2px",
+    borderStyle: "solid",
+    borderRadius: "9999px", // fully rounded
+    width: "40px",
+    height: "40px",
+    shadow: "none",
+    opacity: 100,
+    library: "shadcn", // Default library
+    avatarText: "JD", // Default avatar text (initials)
+  },
+  Divider: {
+    backgroundColor: "transparent",
+    borderColor: "#e5e7eb", // gray-200
+    borderWidth: "1px",
+    borderTopWidth: "1px",
+    borderStyle: "solid",
+    width: "200px",
+    height: "0",
+    shadow: "none",
+    opacity: 100,
+    library: "shadcn", // Default library
+  },
+  Text: {
+    backgroundColor: "transparent",
+    textColor: "#374151", // gray-700
+    fontSize: "0.875rem", // text-sm
+    fontWeight: "400", // font-normal
+    width: "auto",
+    height: "auto",
+    textAlign: "left",
+    letterSpacing: "normal",
+    library: "shadcn", // Default library
+    textContent: "Text content", // Default text content
   }
 };
 
@@ -265,7 +236,12 @@ const ComponentList: React.FC<ComponentListProps> = ({ onDragStart }) => {
     Card: { ...defaultStyles.Card },
     Rectangle: { ...defaultStyles.Rectangle },
     Circle: { ...defaultStyles.Circle },
-    Line: { ...defaultStyles.Line }
+    Line: { ...defaultStyles.Line },
+    Dropdown: { ...defaultStyles.Dropdown },
+    Badge: { ...defaultStyles.Badge },
+    Avatar: { ...defaultStyles.Avatar },
+    Divider: { ...defaultStyles.Divider },
+    Text: { ...defaultStyles.Text }
   });
   
   const handleStyleChange = (componentName: string, styles: any) => {
@@ -306,169 +282,227 @@ const ComponentList: React.FC<ComponentListProps> = ({ onDragStart }) => {
                  styles.shadow === 'lg' ? '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)' :
                  styles.shadow === 'xl' ? '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)' : 
                  defaultStyles[name].shadow === 'sm' ? '0 1px 2px 0 rgb(0 0 0 / 0.05)' : 'none',
+      textAlign: styles.textAlign || defaultStyles[name]?.textAlign,
+      letterSpacing: styles.letterSpacing || defaultStyles[name]?.letterSpacing,
     };
 
-    const handleResize = (width: string, height: string) => {
-      const newStyles = { ...componentStyles[name] };
-      newStyles.width = width;
-      
-      // For Circle, update both width and height to maintain aspect ratio
-      if (name === 'Circle') {
-        newStyles.height = width;
-      } else if (name !== 'Line') {
-        // For Line, we don't update height
-        newStyles.height = height;
-      }
-      
-      handleStyleChange(name, newStyles);
-    };
-
-    const component = (() => {
-      switch (name) {
-        case 'Button':
-          switch (library) {
-            case 'mui':
-              return (
-                <MuiButton variant="contained" color="primary" style={commonStyles}>
-                  {styles.buttonText === undefined || styles.buttonText === null ? 'Button' : styles.buttonText}
-                </MuiButton>
-              );
-            case 'antd':
-              return (
-                <AntdButton type="primary" style={commonStyles}>
-                  {styles.buttonText === undefined || styles.buttonText === null ? 'Button' : styles.buttonText}
-                </AntdButton>
-              );
-            case 'shadcn':
-            default:
-              return (
-                <ShadcnButton
-                  size={styles.size || defaultStyles.Button.size}
-                  variant={styles.variant || defaultStyles.Button.variant}
-                  style={commonStyles}
-                >
-                  {styles.buttonText === undefined || styles.buttonText === null ? 'Button' : styles.buttonText}
-                </ShadcnButton>
-              );
-          }
-        case 'Input':
-          switch (library) {
-            case 'mui':
-              return (
-                <MuiInput
-                  // @ts-ignore - Ignoring type error for demo purposes
-                  label={styles.placeholder || defaultStyles.Input.placeholder}
-                  variant="outlined"
-                  style={commonStyles}
-                />
-              );
-            case 'antd':
-              return (
-                <AntdInput
-                  placeholder={styles.placeholder || defaultStyles.Input.placeholder}
-                  style={commonStyles}
-                />
-              );
-            case 'shadcn':
-            default:
-              return (
-                <ShadcnInput
-                  placeholder={styles.placeholder || defaultStyles.Input.placeholder}
-                  style={commonStyles}
-                />
-              );
-          }
-        case 'Card':
-          switch (library) {
-            case 'mui':
-              return (
-                <div className="scale-[0.7] transform-origin-center">
-                  <MuiCard style={{...commonStyles, maxWidth: '100%', maxHeight: '100%'}}>
-                    <span style={{ color: styles.textColor || defaultStyles.Card.textColor, padding: '8px', display: 'block', fontSize: '0.8rem' }}>
-                      {styles.cardContent || 'Card Content'}
-                    </span>
-                  </MuiCard>
-                </div>
-              );
-            case 'antd':
-              return (
-                <div className="scale-[0.7] transform-origin-center">
-                  <AntdCard 
-                    title={styles.cardTitle || "Card"} 
-                    style={{...commonStyles, maxWidth: '100%', maxHeight: '100%'}}
-                    headStyle={{padding: '8px', fontSize: '0.9rem'}}
-                    bodyStyle={{padding: '8px'}}
-                  >
-                    <span style={{ color: styles.textColor || defaultStyles.Card.textColor, fontSize: '0.8rem' }}>
-                      {styles.cardContent || 'Card Content'}
-                    </span>
-                  </AntdCard>
-                </div>
-              );
-            case 'shadcn':
-            default:
-              return (
-                <ShadcnCard
-                  className="flex items-center justify-center p-2"
+    switch (name) {
+      case 'Button':
+        switch (library) {
+          case 'mui':
+            return (
+              <MuiButton variant="contained" color="primary" style={commonStyles}>
+                {styles.buttonText === undefined || styles.buttonText === null ? 'Button' : styles.buttonText}
+              </MuiButton>
+            );
+          case 'antd':
+            return (
+              <AntdButton type="primary" style={commonStyles}>
+                {styles.buttonText === undefined || styles.buttonText === null ? 'Button' : styles.buttonText}
+              </AntdButton>
+            );
+          case 'shadcn':
+          default:
+            return (
+              <ShadcnButton
+                size={styles.size || defaultStyles.Button.size}
+                variant={styles.variant || defaultStyles.Button.variant}
+                style={commonStyles}
+              >
+                {styles.buttonText === undefined || styles.buttonText === null ? 'Button' : styles.buttonText}
+              </ShadcnButton>
+            );
+        }
+      case 'Input':
+        switch (library) {
+          case 'mui':
+            return (
+              <MuiInput
+                // @ts-ignore - Ignoring type error for demo purposes
+                label={styles.placeholder || defaultStyles.Input.placeholder}
+                variant="outlined"
+                style={commonStyles}
+              />
+            );
+          case 'antd':
+            return (
+              <AntdInput
+                placeholder={styles.placeholder || defaultStyles.Input.placeholder}
+                style={commonStyles}
+              />
+            );
+          case 'shadcn':
+          default:
+            return (
+              <ShadcnInput
+                placeholder={styles.placeholder || defaultStyles.Input.placeholder}
+                style={commonStyles}
+              />
+            );
+        }
+      case 'Card':
+        switch (library) {
+          case 'mui':
+            return (
+              <div className="scale-[0.7] transform-origin-center">
+                <MuiCard style={{...commonStyles, maxWidth: '100%', maxHeight: '100%'}}>
+                  <span style={{ color: styles.textColor || defaultStyles.Card.textColor, padding: '8px', display: 'block', fontSize: '0.8rem' }}>
+                    {styles.cardContent || 'Card Content'}
+                  </span>
+                </MuiCard>
+              </div>
+            );
+          case 'antd':
+            return (
+              <div className="scale-[0.7] transform-origin-center">
+                <AntdCard 
+                  title={styles.cardTitle || "Card"} 
                   style={{...commonStyles, maxWidth: '100%', maxHeight: '100%'}}
+                  headStyle={{padding: '8px', fontSize: '0.9rem'}}
+                  bodyStyle={{padding: '8px'}}
                 >
                   <span style={{ color: styles.textColor || defaultStyles.Card.textColor, fontSize: '0.8rem' }}>
                     {styles.cardContent || 'Card Content'}
                   </span>
-                </ShadcnCard>
-              );
-          }
-        case 'Rectangle':
-          return (
-            <div
-              style={{
-                ...commonStyles,
-                width: '100%',
-                height: '100%',
-              }}
-              className="flex items-center justify-center"
-            />
-          );
-        case 'Circle':
-          return (
-            <div
-              style={{
-                ...commonStyles,
-                width: '100%',
-                height: '100%',
-                borderRadius: '9999px',
-              }}
-              className="flex items-center justify-center"
-            />
-          );
-        case 'Line':
-          return (
-            <div
-              style={{
-                ...commonStyles,
-                width: '100%',
-                height: '0',
-                borderTopWidth: styles.borderTopWidth || defaultStyles.Line.borderTopWidth,
-              }}
-              className="flex items-center justify-center"
-            />
-          );
-        default:
-          return null;
-      }
-    })();
-
-    // Wrap the component with ResizablePreview
-    return (
-      <ResizablePreview 
-        componentName={name} 
-        styles={styles} 
-        onResize={handleResize}
-        aspectRatio={name === 'Circle'}
-      >
-        {component}
-      </ResizablePreview>
-    );
+                </AntdCard>
+              </div>
+            );
+          case 'shadcn':
+          default:
+            return (
+              <ShadcnCard
+                className="flex items-center justify-center p-2"
+                style={{...commonStyles, maxWidth: '100%', maxHeight: '100%'}}
+              >
+                <span style={{ color: styles.textColor || defaultStyles.Card.textColor, fontSize: '0.8rem' }}>
+                  {styles.cardContent || 'Card Content'}
+                </span>
+              </ShadcnCard>
+            );
+        }
+      case 'Rectangle':
+        return (
+          <div
+            style={{
+              ...commonStyles,
+              width: '100%',
+              height: '100%',
+            }}
+            className="flex items-center justify-center"
+          />
+        );
+      case 'Circle':
+        return (
+          <div
+            style={{
+              ...commonStyles,
+              width: '60px',
+              height: '60px',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto'
+            }}
+            className="flex items-center justify-center"
+          />
+        );
+      case 'Line':
+        return (
+          <div
+            style={{
+              ...commonStyles,
+              width: '100%',
+              height: '0',
+              borderTopWidth: styles.borderTopWidth || defaultStyles.Line.borderTopWidth,
+              borderWidth: styles.borderWidth || defaultStyles.Line.borderWidth,
+              borderColor: styles.borderColor || defaultStyles.Line.borderColor,
+              borderStyle: styles.borderStyle || defaultStyles.Line.borderStyle
+            }}
+            className="flex items-center justify-center"
+          />
+        );
+      case 'Dropdown':
+        return (
+          <div
+            style={{
+              ...commonStyles,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              cursor: 'pointer',
+            }}
+            className="bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-md"
+          >
+            <span style={{ color: styles.textColor || defaultStyles.Dropdown.textColor }}>
+              {styles.dropdownText || 'Select option'}
+            </span>
+            <FiChevronDown style={{ color: styles.textColor || defaultStyles.Dropdown.textColor }} />
+          </div>
+        );
+      case 'Badge':
+        return (
+          <div
+            style={{
+              ...commonStyles,
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+            className="inline-flex"
+          >
+            <span style={{ color: styles.textColor || defaultStyles.Badge.textColor }}>
+              {styles.badgeText || 'New'}
+            </span>
+          </div>
+        );
+      case 'Avatar':
+        return (
+          <div
+            style={{
+              ...commonStyles,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+            className="flex items-center justify-center"
+          >
+            <span style={{ color: styles.textColor || defaultStyles.Avatar.textColor }}>
+              {styles.avatarText || 'JD'}
+            </span>
+          </div>
+        );
+      case 'Divider':
+        return (
+          <div
+            style={{
+              ...commonStyles,
+              width: styles.width || defaultStyles.Divider.width,
+              height: '0',
+              borderTopWidth: styles.borderTopWidth || defaultStyles.Divider.borderTopWidth,
+              borderWidth: styles.borderWidth || defaultStyles.Divider.borderWidth,
+              borderColor: styles.borderColor || defaultStyles.Divider.borderColor,
+              borderStyle: styles.borderStyle || defaultStyles.Divider.borderStyle
+            }}
+            className="flex items-center justify-center"
+          />
+        );
+      case 'Text':
+        return (
+          <div
+            style={{
+              ...commonStyles,
+              textAlign: styles.textAlign as any || 'left',
+            }}
+          >
+            <span style={{ color: styles.textColor || defaultStyles.Text.textColor }}>
+              {styles.textContent || 'Text content'}
+            </span>
+          </div>
+        );
+      default:
+        return null;
+    }
   };
 
   const components = [
@@ -483,6 +517,26 @@ const ComponentList: React.FC<ComponentListProps> = ({ onDragStart }) => {
     {
       name: 'Card',
       icon: FiBox,
+    },
+    {
+      name: 'Dropdown',
+      icon: FiChevronDown,
+    },
+    {
+      name: 'Badge',
+      icon: FiTag,
+    },
+    {
+      name: 'Avatar',
+      icon: FiUser,
+    },
+    {
+      name: 'Text',
+      icon: FiAlignLeft,
+    },
+    {
+      name: 'Divider',
+      icon: FiMinus,
     },
     {
       name: 'Rectangle',
