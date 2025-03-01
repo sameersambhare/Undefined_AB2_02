@@ -1,9 +1,9 @@
 'use client';
 
 import React from 'react';
+import { ThemeProvider } from 'next-themes';
 import MuiProvider from './mui-provider';
 import AntdProvider from './antd-provider';
-import { ThemeProvider } from 'next-themes';
 
 // Main UI providers wrapper component
 const UIProviders = ({ children }: { children: React.ReactNode }) => {

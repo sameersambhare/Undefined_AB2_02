@@ -421,30 +421,36 @@ const DragDropEditor: React.FC = () => {
   // Function to export canvas as PDF
   const exportAsPDF = (element: HTMLDivElement, fileName: string) => {
     // Create a clone of the element to avoid modifying the original
-    const clonedElement = element.cloneNode(true) as HTMLDivElement;
-    document.body.appendChild(clonedElement);
-    clonedElement.style.position = 'absolute';
-    clonedElement.style.left = '-9999px';
+    let clonedElement: HTMLDivElement | null = null;
     
     try {
+      clonedElement = element.cloneNode(true) as HTMLDivElement;
+      document.body.appendChild(clonedElement);
+      clonedElement.style.position = 'absolute';
+      clonedElement.style.left = '-9999px';
+      clonedElement.style.width = `${element.offsetWidth}px`;
+      clonedElement.style.height = `${element.offsetHeight}px`;
+      
       // Process all elements in the clone to replace oklch colors
       const processElements = (elements: HTMLElement[]) => {
         elements.forEach(el => {
-          // Get computed style
+          // Process computed styles
           const computedStyle = window.getComputedStyle(el);
+          const backgroundColor = computedStyle.backgroundColor;
+          const color = computedStyle.color;
           
-          // Apply computed styles directly to element
-          el.style.backgroundColor = computedStyle.backgroundColor;
-          el.style.color = computedStyle.color;
-          el.style.borderColor = computedStyle.borderColor;
+          // Check if the color is in oklch format and convert it
+          if (backgroundColor && backgroundColor.includes('oklch')) {
+            el.style.backgroundColor = 'rgba(200, 200, 200, 0.5)'; // Fallback color
+          }
           
-          // Handle box-shadow and other properties that might use oklch
-          el.style.boxShadow = computedStyle.boxShadow;
+          if (color && color.includes('oklch')) {
+            el.style.color = '#333333'; // Fallback color
+          }
           
           // Process children recursively
-          const children = Array.from(el.children) as HTMLElement[];
-          if (children.length > 0) {
-            processElements(children);
+          if (el.children && el.children.length > 0) {
+            processElements(Array.from(el.children) as HTMLElement[]);
           }
         });
       };
@@ -460,15 +466,15 @@ const DragDropEditor: React.FC = () => {
         const html2canvas = html2canvasModule.default as Html2Canvas;
         const jspdf = jspdfModule.default;
         
-        html2canvas(clonedElement, {
+        html2canvas(clonedElement as HTMLDivElement, {
           backgroundColor: '#ffffff',
           scale: 2,
           logging: false,
           useCORS: true,
           allowTaint: true,
-          onclone: (clonedDoc, clonedElement) => {
+          onclone: (clonedDoc, el) => {
             // Additional processing in the cloned document if needed
-            return clonedElement;
+            return el;
           }
         }).then(canvas => {
           const imgData = canvas.toDataURL('image/jpeg', 1.0);
@@ -485,21 +491,30 @@ const DragDropEditor: React.FC = () => {
           pdf.save(fileName);
           
           // Clean up - remove the cloned element
-          document.body.removeChild(clonedElement);
+          if (clonedElement && document.body.contains(clonedElement)) {
+            document.body.removeChild(clonedElement);
+          }
         }).catch(error => {
           console.error("Error rendering canvas:", error);
           alert("There was an error exporting to PDF. Please try a different format.");
-          document.body.removeChild(clonedElement);
+          // Clean up
+          if (clonedElement && document.body.contains(clonedElement)) {
+            document.body.removeChild(clonedElement);
+          }
         });
       }).catch(error => {
         console.error("Error loading modules:", error);
         alert("There was an error loading the export modules. Please try again later.");
-        document.body.removeChild(clonedElement);
+        // Clean up
+        if (clonedElement && document.body.contains(clonedElement)) {
+          document.body.removeChild(clonedElement);
+        }
       });
     } catch (error) {
       console.error("Error in PDF export:", error);
       alert("There was an error preparing the PDF. Please try a different format.");
-      if (document.body.contains(clonedElement)) {
+      // Clean up
+      if (clonedElement && document.body.contains(clonedElement)) {
         document.body.removeChild(clonedElement);
       }
     }

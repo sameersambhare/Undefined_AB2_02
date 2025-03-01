@@ -3,8 +3,8 @@
 import Link from 'next/link';
 import React from 'react';
 import { FiLayout, FiCode, FiZap, FiBox, FiFeather, FiShield } from 'react-icons/fi';
-import Navbar from './components/Navbar';
-import Footer from './components/Footer';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 
 const FeatureCard = ({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) => (
   <div className="bg-white dark:bg-zinc-800 p-8 rounded-xl shadow-sm hover:shadow-md transition-shadow">

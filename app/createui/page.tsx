@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import ComponentList from '../components/ComponentList';
-import DragDropEditor from '../components/DragDropEditor';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
+import ComponentList from '@/components/ComponentList';
+import DragDropEditor from '@/components/DragDropEditor';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 
 type UILibrary = 'shadcn' | 'mui' | 'antd';
 
