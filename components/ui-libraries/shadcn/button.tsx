@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Button as ShadcnButton, buttonVariants } from "@/app/components/ui/button";
+import { Button as ShadcnButton, buttonVariants } from "@/components/ui/button";
 import { VariantProps } from "class-variance-authority";
 
 export interface ShadcnButtonProps extends React.ComponentProps<"button">, VariantProps<typeof buttonVariants> {

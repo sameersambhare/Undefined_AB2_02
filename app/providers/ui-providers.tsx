@@ -2,20 +2,25 @@
 
 import React from 'react';
 import { ThemeProvider } from 'next-themes';
+import MuiProvider from './mui-provider';
+import AntdProvider from './antd-provider';
 
-export default function UIProviders({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+// Main UI providers wrapper component
+const UIProviders = ({ children }: { children: React.ReactNode }) => {
   return (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="light"
-      enableSystem={false}
-      disableTransitionOnChange
+    <ThemeProvider 
+      attribute="class" 
+      defaultTheme="system" 
+      enableSystem
+      themes={['light', 'dark']}
     >
-      {children}
+      <MuiProvider>
+        <AntdProvider>
+          {children}
+        </AntdProvider>
+      </MuiProvider>
     </ThemeProvider>
   );
-} 
+};
+
+export default UIProviders; 

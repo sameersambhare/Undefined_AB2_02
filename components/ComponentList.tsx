@@ -1,11 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { FiSquare, FiType, FiBox, FiTag } from 'react-icons/fi';
+import { FiSquare, FiType, FiBox } from 'react-icons/fi';
 import { Button as ShadcnButton } from './ui/button';
 import { Input as ShadcnInput } from './ui/input';
 import { Card as ShadcnCard } from './ui/card';
-import { Label as ShadcnLabel } from './ui/label';
 import dynamic from 'next/dynamic';
 import ComponentStyler from './ComponentStyler';
 
@@ -13,11 +12,9 @@ import ComponentStyler from './ComponentStyler';
 const MuiButton = dynamic(() => import('./ui-libraries/mui/button').then(mod => mod.Button), { ssr: false });
 const MuiInput = dynamic(() => import('./ui-libraries/mui/input').then(mod => mod.Input), { ssr: false });
 const MuiCard = dynamic(() => import('./ui-libraries/mui/card').then(mod => mod.Card), { ssr: false });
-const MuiLabel = dynamic(() => import('./ui-libraries/mui/label').then(mod => mod.Label), { ssr: false });
 const AntdButton = dynamic(() => import('./ui-libraries/antd/button').then(mod => mod.Button), { ssr: false });
 const AntdInput = dynamic(() => import('./ui-libraries/antd/input').then(mod => mod.Input), { ssr: false });
 const AntdCard = dynamic(() => import('./ui-libraries/antd/card').then(mod => mod.Card), { ssr: false });
-const AntdLabel = dynamic(() => import('./ui-libraries/antd/label').then(mod => mod.Label), { ssr: false });
 
 // UI Library type
 type UILibrary = 'shadcn' | 'mui' | 'antd';
@@ -55,7 +52,6 @@ interface StyleProperties {
   buttonText?: string; // Add button text property
   cardTitle?: string; // Add card title property
   cardContent?: string; // Add card content property
-  labelText?: string; // Add label text property
   [key: string]: any; // Allow for additional properties
 }
 
@@ -63,7 +59,6 @@ interface DefaultStylesType {
   Button: StyleProperties;
   Input: StyleProperties;
   Card: StyleProperties;
-  Label: StyleProperties;
   [key: string]: StyleProperties; // Allow indexing with string
 }
 
@@ -72,7 +67,7 @@ const defaultStyles: DefaultStylesType = {
   Button: {
     variant: "default",
     size: "default",
-    backgroundColor: "#3b82f6", // blue-500
+    backgroundColor: "#f97316", // orange-500
     textColor: "#ffffff",
     borderColor: "transparent",
     borderWidth: "1px",
@@ -115,16 +110,6 @@ const defaultStyles: DefaultStylesType = {
     library: "shadcn", // Default library
     cardTitle: "Card Title", // Default card title
     cardContent: "Card Content", // Default card content
-  },
-  Label: {
-    backgroundColor: "transparent",
-    textColor: "#374151", // gray-700
-    fontSize: "0.875rem", // text-sm
-    fontWeight: "500", // font-medium
-    width: "auto",
-    height: "auto",
-    library: "shadcn",
-    labelText: "Label"
   }
 };
 
@@ -132,8 +117,7 @@ const ComponentList: React.FC<ComponentListProps> = ({ onDragStart }) => {
   const [componentStyles, setComponentStyles] = useState<ComponentStyles>({
     Button: { ...defaultStyles.Button },
     Input: { ...defaultStyles.Input },
-    Card: { ...defaultStyles.Card },
-    Label: { ...defaultStyles.Label }
+    Card: { ...defaultStyles.Card }
   });
   
   const handleStyleChange = (componentName: string, styles: any) => {
@@ -270,28 +254,6 @@ const ComponentList: React.FC<ComponentListProps> = ({ onDragStart }) => {
               </ShadcnCard>
             );
         }
-      case 'Label':
-        switch (library) {
-          case 'mui':
-            return (
-              <MuiLabel style={commonStyles}>
-                {styles.labelText || defaultStyles.Label.labelText}
-              </MuiLabel>
-            );
-          case 'antd':
-            return (
-              <AntdLabel style={commonStyles}>
-                {styles.labelText || defaultStyles.Label.labelText}
-              </AntdLabel>
-            );
-          case 'shadcn':
-          default:
-            return (
-              <ShadcnLabel style={commonStyles}>
-                {styles.labelText || defaultStyles.Label.labelText}
-              </ShadcnLabel>
-            );
-        }
       default:
         return null;
     }
@@ -310,15 +272,11 @@ const ComponentList: React.FC<ComponentListProps> = ({ onDragStart }) => {
       name: 'Card',
       icon: FiBox,
     },
-    {
-      name: 'Label',
-      icon: FiTag,
-    }
   ];
 
   return (
-    <div className="w-72 bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-      <h2 className="text-lg font-semibold mb-4 text-gray-900">Components</h2>
+    <div className="w-72 bg-white dark:bg-zinc-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-zinc-700">
+      <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-zinc-100">Components</h2>
       <div className="space-y-3">
         {components.map((component) => {
           const Icon = component.icon;
@@ -329,18 +287,18 @@ const ComponentList: React.FC<ComponentListProps> = ({ onDragStart }) => {
               key={component.name}
               draggable
               onDragStart={(e) => onDragStart(e, component.name, componentStyles[component.name], currentLibrary as UILibrary)}
-              className="group relative flex flex-col gap-2 p-3 rounded-md cursor-move hover:bg-gray-50 border border-gray-200 transition-colors"
+              className="group relative flex flex-col gap-2 p-3 rounded-md cursor-move hover:bg-gray-50 dark:hover:bg-zinc-700 border border-gray-200 dark:border-zinc-700 transition-colors dark:bg-zinc-800"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Icon className="w-5 h-5 text-gray-600" />
-                  <span className="text-sm font-medium text-gray-700">{component.name}</span>
+                  <Icon className="w-5 h-5 text-gray-600 dark:text-zinc-400" />
+                  <span className="text-sm font-medium text-gray-700 dark:text-zinc-300">{component.name}</span>
                 </div>
                 <div className="text-xs">
                   <select 
                     value={currentLibrary}
                     onChange={(e) => handleLibraryChange(component.name, e.target.value as UILibrary)}
-                    className="text-xs border rounded px-1 py-0.5 bg-white"
+                    className="text-xs border rounded px-1 py-0.5 bg-white dark:bg-zinc-700 dark:text-zinc-300 dark:border-zinc-600"
                   >
                     <option value="shadcn">shadcn</option>
                     <option value="mui">Material UI</option>
@@ -348,7 +306,7 @@ const ComponentList: React.FC<ComponentListProps> = ({ onDragStart }) => {
                   </select>
                 </div>
               </div>
-              <div className="flex items-center justify-center bg-gray-50 rounded-md p-3 h-20 overflow-hidden">
+              <div className="flex items-center justify-center bg-gray-50 dark:bg-zinc-700 rounded-md p-3 h-20 overflow-hidden">
                 <div className="w-full h-full flex items-center justify-center">
                   {renderPreview(component.name)}
                 </div>
