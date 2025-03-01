@@ -73,16 +73,7 @@ export default function CreateUI() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 flex flex-col">
       <Navbar />
-      <main className="container mx-auto py-6 px-4 flex-grow page-content">
-        <button 
-          onClick={() => setShowDebug(!showDebug)}
-          className="mb-4 px-4 py-2 bg-gray-200 dark:bg-zinc-700 rounded-lg text-sm"
-        >
-          {showDebug ? 'Hide' : 'Show'} Debug Info
-        </button>
-        
-        {showDebug && <AuthStatus />}
-        
+      <main className="container mx-auto py-6 px-4 flex-grow page-content">        
         <div className="flex flex-col md:flex-row gap-6">
           <ComponentList onDragStart={handleDragStart} />
           <DragDropEditor />
