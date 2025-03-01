@@ -17,6 +17,7 @@ import {
 } from '@mui/material';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import ToastExample from '@/components/ToastExample';
 
 export default function Profile() {
   const { user, logout, isLoading } = useAuth();

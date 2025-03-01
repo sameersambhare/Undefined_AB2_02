@@ -13,14 +13,26 @@ if (!MONGODB_URI) {
  * in development. This prevents connections growing exponentially
  * during API Route usage.
  */
-let cached = global.mongoose;
+// Define the type for the cached mongoose connection
+interface MongooseCache {
+  conn: typeof mongoose | null;
+  promise: Promise<typeof mongoose> | null;
+}
 
-if (!cached) {
-  cached = global.mongoose = { conn: null, promise: null };
+// Declare the global mongoose property
+declare global {
+  var mongoose: MongooseCache;
+}
+
+let cached: MongooseCache = global.mongoose || { conn: null, promise: null };
+
+if (!global.mongoose) {
+  global.mongoose = cached;
 }
 
 async function connectToDatabase() {
   if (cached.conn) {
+    console.log('Using existing MongoDB connection');
     return cached.conn;
   }
 
@@ -29,12 +41,34 @@ async function connectToDatabase() {
       bufferCommands: false,
     };
 
-    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
-      return mongoose;
-    });
+    console.log('Connecting to MongoDB...', MONGODB_URI.substring(0, MONGODB_URI.indexOf('@')));
+    
+    try {
+      cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
+        console.log('MongoDB connected successfully');
+        return mongoose;
+      }).catch((error) => {
+        console.error('MongoDB connection error in promise:', error);
+        cached.promise = null; // Reset the promise so we can try again
+        throw error;
+      });
+    } catch (error) {
+      console.error('MongoDB connection error in try/catch:', error);
+      cached.promise = null; // Reset the promise so we can try again
+      throw error;
+    }
   }
-  cached.conn = await cached.promise;
-  return cached.conn;
+  
+  try {
+    cached.conn = await cached.promise;
+    return cached.conn;
+  } catch (error) {
+    console.error('Error resolving MongoDB connection:', error);
+    // Reset the connection and promise so we can try again next time
+    cached.conn = null;
+    cached.promise = null;
+    throw error;
+  }
 }
 
 export default connectToDatabase; 
