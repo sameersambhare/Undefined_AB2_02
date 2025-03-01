@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { FiSquare, FiType, FiBox } from 'react-icons/fi';
+import { FiSquare, FiType, FiBox, FiTag } from 'react-icons/fi';
 import { Button as ShadcnButton } from './ui/button';
 import { Input as ShadcnInput } from './ui/input';
 import { Card as ShadcnCard } from './ui/card';
+import { Label as ShadcnLabel } from './ui/label';
 import dynamic from 'next/dynamic';
 import ComponentStyler from './ComponentStyler';
 
@@ -12,9 +13,11 @@ import ComponentStyler from './ComponentStyler';
 const MuiButton = dynamic(() => import('./ui-libraries/mui/button').then(mod => mod.Button), { ssr: false });
 const MuiInput = dynamic(() => import('./ui-libraries/mui/input').then(mod => mod.Input), { ssr: false });
 const MuiCard = dynamic(() => import('./ui-libraries/mui/card').then(mod => mod.Card), { ssr: false });
+const MuiLabel = dynamic(() => import('./ui-libraries/mui/label').then(mod => mod.Label), { ssr: false });
 const AntdButton = dynamic(() => import('./ui-libraries/antd/button').then(mod => mod.Button), { ssr: false });
 const AntdInput = dynamic(() => import('./ui-libraries/antd/input').then(mod => mod.Input), { ssr: false });
 const AntdCard = dynamic(() => import('./ui-libraries/antd/card').then(mod => mod.Card), { ssr: false });
+const AntdLabel = dynamic(() => import('./ui-libraries/antd/label').then(mod => mod.Label), { ssr: false });
 
 // UI Library type
 type UILibrary = 'shadcn' | 'mui' | 'antd';
@@ -52,6 +55,7 @@ interface StyleProperties {
   buttonText?: string; // Add button text property
   cardTitle?: string; // Add card title property
   cardContent?: string; // Add card content property
+  labelText?: string; // Add label text property
   [key: string]: any; // Allow for additional properties
 }
 
@@ -59,6 +63,7 @@ interface DefaultStylesType {
   Button: StyleProperties;
   Input: StyleProperties;
   Card: StyleProperties;
+  Label: StyleProperties;
   [key: string]: StyleProperties; // Allow indexing with string
 }
 
@@ -110,6 +115,16 @@ const defaultStyles: DefaultStylesType = {
     library: "shadcn", // Default library
     cardTitle: "Card Title", // Default card title
     cardContent: "Card Content", // Default card content
+  },
+  Label: {
+    backgroundColor: "transparent",
+    textColor: "#374151", // gray-700
+    fontSize: "0.875rem", // text-sm
+    fontWeight: "500", // font-medium
+    width: "auto",
+    height: "auto",
+    library: "shadcn",
+    labelText: "Label"
   }
 };
 
@@ -117,7 +132,8 @@ const ComponentList: React.FC<ComponentListProps> = ({ onDragStart }) => {
   const [componentStyles, setComponentStyles] = useState<ComponentStyles>({
     Button: { ...defaultStyles.Button },
     Input: { ...defaultStyles.Input },
-    Card: { ...defaultStyles.Card }
+    Card: { ...defaultStyles.Card },
+    Label: { ...defaultStyles.Label }
   });
   
   const handleStyleChange = (componentName: string, styles: any) => {
@@ -254,6 +270,28 @@ const ComponentList: React.FC<ComponentListProps> = ({ onDragStart }) => {
               </ShadcnCard>
             );
         }
+      case 'Label':
+        switch (library) {
+          case 'mui':
+            return (
+              <MuiLabel style={commonStyles}>
+                {styles.labelText || defaultStyles.Label.labelText}
+              </MuiLabel>
+            );
+          case 'antd':
+            return (
+              <AntdLabel style={commonStyles}>
+                {styles.labelText || defaultStyles.Label.labelText}
+              </AntdLabel>
+            );
+          case 'shadcn':
+          default:
+            return (
+              <ShadcnLabel style={commonStyles}>
+                {styles.labelText || defaultStyles.Label.labelText}
+              </ShadcnLabel>
+            );
+        }
       default:
         return null;
     }
@@ -272,6 +310,10 @@ const ComponentList: React.FC<ComponentListProps> = ({ onDragStart }) => {
       name: 'Card',
       icon: FiBox,
     },
+    {
+      name: 'Label',
+      icon: FiTag,
+    }
   ];
 
   return (

@@ -1,16 +1,19 @@
 'use client'
 import React, { useState, useEffect } from "react";
-import { FiMove, FiTrash2, FiSave, FiEye, FiEdit2, FiDownload, FiList, FiCode } from 'react-icons/fi';
+import { FiMove, FiTrash2, FiSave, FiEye, FiEdit2, FiDownload, FiList, FiCode, FiRotateCcw, FiRotateCw } from 'react-icons/fi';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Card } from './ui/card';
+import { Label } from './ui/label';
 // Import UI library components
 import { Button as MuiButton } from './ui-libraries/mui/button';
 import { Input as MuiInput } from './ui-libraries/mui/input';
 import { Card as MuiCard } from './ui-libraries/mui/card';
+import { Label as MuiLabel } from './ui-libraries/mui/label';
 import { Button as AntdButton } from './ui-libraries/antd/button';
 import { Input as AntdInput } from './ui-libraries/antd/input';
 import { Card as AntdCard } from './ui-libraries/antd/card';
+import { Label as AntdLabel } from './ui-libraries/antd/label';
 import ComponentStyler from './ComponentStyler';
 import {
   AlertDialog,
@@ -68,6 +71,8 @@ let componentIdCounter = 0;
 
 const DragDropEditor: React.FC = () => {
   const [components, setComponents] = useState<DroppedComponent[]>([]);
+  const [history, setHistory] = useState<DroppedComponent[][]>([[]]); // Add history state
+  const [currentHistoryIndex, setCurrentHistoryIndex] = useState(0); // Add current history index
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [selectedComponent, setSelectedComponent] = useState<string | null>(null);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
@@ -80,6 +85,7 @@ const DragDropEditor: React.FC = () => {
   const [selectedLayout, setSelectedLayout] = useState<string>('');
   const [exportFormat, setExportFormat] = useState<string>('json');
   const [canvasRef, setCanvasRef] = useState<HTMLDivElement | null>(null);
+  const [editingText, setEditingText] = useState<string | null>(null);
 
   // Load saved layouts from localStorage on component mount - safely with useEffect
   useEffect(() => {
@@ -96,6 +102,30 @@ const DragDropEditor: React.FC = () => {
   const generateComponentId = (componentType: string) => {
     componentIdCounter += 1;
     return `${componentType}-${componentIdCounter}`;
+  };
+
+  // Add function to update history
+  const updateHistory = (newComponents: DroppedComponent[]) => {
+    const newHistory = history.slice(0, currentHistoryIndex + 1);
+    newHistory.push([...newComponents]);
+    setHistory(newHistory);
+    setCurrentHistoryIndex(newHistory.length - 1);
+  };
+
+  // Add undo function
+  const handleUndo = () => {
+    if (currentHistoryIndex > 0) {
+      setCurrentHistoryIndex(currentHistoryIndex - 1);
+      setComponents([...history[currentHistoryIndex - 1]]);
+    }
+  };
+
+  // Add redo function
+  const handleRedo = () => {
+    if (currentHistoryIndex < history.length - 1) {
+      setCurrentHistoryIndex(currentHistoryIndex + 1);
+      setComponents([...history[currentHistoryIndex + 1]]);
+    }
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -117,11 +147,13 @@ const DragDropEditor: React.FC = () => {
 
     // If we're moving an existing component
     if (draggedComponentId) {
-      setComponents(prev => prev.map(comp => 
+      const newComponents = components.map(comp => 
         comp.id === draggedComponentId
           ? { ...comp, position: { x, y } }
           : comp
-      ));
+      );
+      setComponents(newComponents);
+      updateHistory(newComponents); // Add to history
       setDraggedComponentId(null);
       return;
     }
@@ -176,6 +208,15 @@ const DragDropEditor: React.FC = () => {
         textColor: "#374151", // gray-700
         cardTitle: "Card Title", // Add default card title
         cardContent: "Card Content", // Add default card content
+      },
+      Label: {
+        backgroundColor: "transparent",
+        textColor: "#374151", // gray-700
+        fontSize: "0.875rem", // text-sm
+        fontWeight: "500", // font-medium
+        width: "auto",
+        height: "auto",
+        labelText: "Label"
       }
     };
 
@@ -193,7 +234,9 @@ const DragDropEditor: React.FC = () => {
       library: componentLibrary as 'shadcn' | 'mui' | 'antd'
     };
 
-    setComponents((prev) => [...prev, newComponent]);
+    const newComponents = [...components, newComponent];
+    setComponents(newComponents);
+    updateHistory(newComponents); // Add to history
   };
 
   const handleComponentDragStart = (e: React.DragEvent<HTMLDivElement>, id: string) => {
@@ -207,6 +250,7 @@ const DragDropEditor: React.FC = () => {
 
   const handleReset = () => {
     setComponents([]);
+    updateHistory([]); // Add empty state to history
     setSelectedComponent(null);
   };
 
@@ -612,11 +656,17 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
   };
 
   const handleStyleChange = (componentId: string, newStyles: any) => {
-    setComponents(prev => prev.map(comp => 
+    const newComponents = components.map(comp => 
       comp.id === componentId 
         ? { ...comp, styles: { ...comp.styles, ...newStyles } }
         : comp
-    ));
+    );
+    setComponents(newComponents);
+    updateHistory(newComponents); // Add to history
+  };
+
+  const handleLabelTextChange = (id: string, value: string) => {
+    handleStyleChange(id, { labelText: value });
   };
 
   const renderComponent = (component: DroppedComponent) => {
@@ -647,6 +697,14 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
 
     const wrapperClasses = `relative group ${isPreviewMode ? '' : 'cursor-move'} ${isSelected ? 'ring-2 ring-blue-500 ring-offset-2' : ''}`;
 
+    const handleDelete = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      const newComponents = components.filter(comp => comp.id !== id);
+      setComponents(newComponents);
+      updateHistory(newComponents);
+      setSelectedComponent(null);
+    };
+
     // Import the components dynamically based on the library
     const renderComponentByLibrary = () => {
       switch (type) {
@@ -658,18 +716,23 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
                   onClick={(e) => !isPreviewMode && handleComponentClick(id, e)}
                   draggable={!isPreviewMode}
                   onDragStart={(e) => handleComponentDragStart(e, id)}>
-                  {/* 
-                    Note: There's a type mismatch with MUI component props.
-                    For a production app, we would need to properly type the props
-                    or create a wrapper component that handles the conversion.
-                  */}
+                  {isSelected && !isPreviewMode && (
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-md z-50 bg-red-500 hover:bg-red-600 border-2 border-white"
+                      onClick={handleDelete}
+                    >
+                      <FiTrash2 className="h-3 w-3 text-white" />
+                    </Button>
+                  )}
                   <MuiButton 
                     // @ts-ignore - Ignoring type error for demo purposes
                     variant="contained"
                     color="primary"
                     style={{
                       ...commonStyles,
-                      textTransform: 'none', // MUI buttons have text-transform: uppercase by default
+                      textTransform: 'none',
                       boxShadow: '0px 3px 1px -2px rgba(0,0,0,0.2), 0px 2px 2px 0px rgba(0,0,0,0.14), 0px 1px 5px 0px rgba(0,0,0,0.12)',
                       fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
                       fontWeight: 500,
@@ -695,6 +758,16 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
                   onClick={(e) => !isPreviewMode && handleComponentClick(id, e)}
                   draggable={!isPreviewMode}
                   onDragStart={(e) => handleComponentDragStart(e, id)}>
+                  {isSelected && !isPreviewMode && (
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-md z-50 bg-red-500 hover:bg-red-600 border-2 border-white"
+                      onClick={handleDelete}
+                    >
+                      <FiTrash2 className="h-3 w-3 text-white" />
+                    </Button>
+                  )}
                   <AntdButton 
                     type="primary"
                     style={commonStyles}
@@ -719,6 +792,16 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
                   onClick={(e) => !isPreviewMode && handleComponentClick(id, e)}
                   draggable={!isPreviewMode}
                   onDragStart={(e) => handleComponentDragStart(e, id)}>
+                  {isSelected && !isPreviewMode && (
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-md z-50 bg-red-500 hover:bg-red-600 border-2 border-white"
+                      onClick={handleDelete}
+                    >
+                      <FiTrash2 className="h-3 w-3 text-white" />
+                    </Button>
+                  )}
                   <Button
                     size={styles?.size || "default"}
                     variant={styles?.variant || "default"}
@@ -746,92 +829,90 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
               );
           }
         case 'Input':
-          switch (library) {
-            case 'mui':
-              return (
-                <div className={wrapperClasses}
-                  onClick={(e) => !isPreviewMode && handleComponentClick(id, e)}
-                  draggable={!isPreviewMode}
-                  onDragStart={(e) => handleComponentDragStart(e, id)}>
-                  {/* 
-                    Note: There's a type mismatch with MUI component props.
-                    For a production app, we would need to properly type the props
-                    or create a wrapper component that handles the conversion.
-                  */}
-                  <MuiInput
-                    // @ts-ignore - Ignoring type error for demo purposes
-                    label="MUI Input"
-                    variant="outlined"
-                    style={{
-                      ...commonStyles,
-                      fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-                      borderRadius: '4px',
-                    }}
-                    disabled={isPreviewMode}
+          return (
+            <div className={wrapperClasses}
+              onClick={(e) => !isPreviewMode && handleComponentClick(id, e)}
+              draggable={!isPreviewMode}
+              onDragStart={(e) => handleComponentDragStart(e, id)}>
+              {isSelected && !isPreviewMode && (
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-md z-50 bg-red-500 hover:bg-red-600 border-2 border-white"
+                  onClick={handleDelete}
+                >
+                  <FiTrash2 className="h-3 w-3 text-white" />
+                </Button>
+              )}
+              <MuiInput
+                // @ts-ignore - Ignoring type error for demo purposes
+                label="MUI Input"
+                variant="outlined"
+                style={{
+                  ...commonStyles,
+                  fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+                  borderRadius: '4px',
+                }}
+                disabled={isPreviewMode}
+              />
+              {isSelected && (
+                <div className="absolute top-full left-0 right-0 mt-2 z-10">
+                  <ComponentStyler
+                    componentType={type}
+                    onStyleChange={(styles) => handleStyleChange(id, styles)}
+                    initialStyles={component.styles}
                   />
-                  {isSelected && (
-                    <div className="absolute top-full left-0 right-0 mt-2 z-10">
-                      <ComponentStyler
-                        componentType={type}
-                        onStyleChange={(styles) => handleStyleChange(id, styles)}
-                        initialStyles={component.styles}
-                      />
-                    </div>
-                  )}
                 </div>
-              );
-            case 'antd':
-              return (
-                <div className={wrapperClasses}
-                  onClick={(e) => !isPreviewMode && handleComponentClick(id, e)}
-                  draggable={!isPreviewMode}
-                  onDragStart={(e) => handleComponentDragStart(e, id)}>
-                  <AntdInput
-                    placeholder={styles?.placeholder || "Ant Design Input"}
-                    style={commonStyles}
-                    disabled={isPreviewMode}
-                  />
-                  {isSelected && (
-                    <div className="absolute top-full left-0 right-0 mt-2 z-10">
-                      <ComponentStyler
-                        componentType={type}
-                        onStyleChange={(styles) => handleStyleChange(id, styles)}
-                        initialStyles={component.styles}
-                      />
-                    </div>
-                  )}
-                </div>
-              );
-            case 'shadcn':
-            default:
-              return (
-                <div className={wrapperClasses}
-                  onClick={(e) => !isPreviewMode && handleComponentClick(id, e)}
-                  draggable={!isPreviewMode}
-                  onDragStart={(e) => handleComponentDragStart(e, id)}>
-                  <Input
-                    placeholder={styles?.placeholder || "Shadcn Input"}
-                    style={{
-                      ...commonStyles,
-                      fontFamily: 'var(--font-sans)',
-                      borderRadius: 'var(--radius)',
-                    }}
-                    className="transition-colors"
-                    disabled={isPreviewMode}
-                  />
-                  {isSelected && (
-                    <div className="absolute top-full left-0 right-0 mt-2 z-10">
-                      <ComponentStyler
-                        componentType={type}
-                        onStyleChange={(styles) => handleStyleChange(id, styles)}
-                        initialStyles={component.styles}
-                      />
-                    </div>
-                  )}
-                </div>
-              );
-          }
+              )}
+            </div>
+          );
         case 'Card':
+          return (
+            <div className={wrapperClasses}
+              onClick={(e) => !isPreviewMode && handleComponentClick(id, e)}
+              draggable={!isPreviewMode}
+              onDragStart={(e) => handleComponentDragStart(e, id)}>
+              {isSelected && !isPreviewMode && (
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-md z-50 bg-red-500 hover:bg-red-600 border-2 border-white"
+                  onClick={handleDelete}
+                >
+                  <FiTrash2 className="h-3 w-3 text-white" />
+                </Button>
+              )}
+              <MuiCard 
+                // @ts-ignore - Ignoring type error for demo purposes
+                style={{
+                  ...commonStyles,
+                  fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+                  borderRadius: '4px',
+                  boxShadow: '0px 2px 1px -1px rgba(0,0,0,0.2), 0px 1px 1px 0px rgba(0,0,0,0.14), 0px 1px 3px 0px rgba(0,0,0,0.12)',
+                  padding: '16px',
+                }}
+              >
+                <div style={{ padding: '16px' }}>
+                  <h3 style={{ color: styles?.textColor, fontWeight: 500, marginBottom: '8px', fontSize: '1.1em' }}>
+                    {styles.cardTitle || 'MUI Card'}
+                  </h3>
+                  <p style={{ color: styles?.textColor, fontSize: '0.875rem' }}>
+                    {styles.cardContent === undefined || styles.cardContent === null ? 'This is a Material UI card with elevation and padding.' : styles.cardContent}
+                  </p>
+                </div>
+              </MuiCard>
+              {isSelected && (
+                <div className="absolute top-full left-0 right-0 mt-2 z-10">
+                  <ComponentStyler
+                    componentType={type}
+                    onStyleChange={(styles) => handleStyleChange(id, styles)}
+                    initialStyles={component.styles}
+                  />
+                </div>
+              )}
+            </div>
+          );
+        case 'Label':
           switch (library) {
             case 'mui':
               return (
@@ -839,30 +920,52 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
                   onClick={(e) => !isPreviewMode && handleComponentClick(id, e)}
                   draggable={!isPreviewMode}
                   onDragStart={(e) => handleComponentDragStart(e, id)}>
-                  {/* 
-                    Note: There's a type mismatch with MUI component props.
-                    For a production app, we would need to properly type the props
-                    or create a wrapper component that handles the conversion.
-                  */}
-                  <MuiCard 
-                    // @ts-ignore - Ignoring type error for demo purposes
-                    style={{
-                      ...commonStyles,
-                      fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-                      borderRadius: '4px',
-                      boxShadow: '0px 2px 1px -1px rgba(0,0,0,0.2), 0px 1px 1px 0px rgba(0,0,0,0.14), 0px 1px 3px 0px rgba(0,0,0,0.12)',
-                      padding: '16px',
-                    }}
-                  >
-                    <div style={{ padding: '16px' }}>
-                      <h3 style={{ color: styles?.textColor, fontWeight: 500, marginBottom: '8px', fontSize: '1.1em' }}>
-                        {styles.cardTitle || 'MUI Card'}
-                      </h3>
-                      <p style={{ color: styles?.textColor, fontSize: '0.875rem' }}>
-                        {styles.cardContent === undefined || styles.cardContent === null ? 'This is a Material UI card with elevation and padding.' : styles.cardContent}
-                      </p>
+                  {isSelected && !isPreviewMode && (
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-md z-50 bg-red-500 hover:bg-red-600 border-2 border-white"
+                      onClick={handleDelete}
+                    >
+                      <FiTrash2 className="h-3 w-3 text-white" />
+                    </Button>
+                  )}
+                  {isSelected && !isPreviewMode ? (
+                    <input
+                      type="text"
+                      value={editingText !== null ? editingText : (styles.labelText || '')}
+                      onChange={(e) => setEditingText(e.target.value)}
+                      onBlur={() => {
+                        if (editingText !== null) {
+                          handleLabelTextChange(id, editingText);
+                        }
+                        setEditingText(null);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          if (editingText !== null) {
+                            handleLabelTextChange(id, editingText);
+                          }
+                          setEditingText(null);
+                        }
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      className="bg-transparent border-b border-dashed border-gray-400 focus:outline-none px-1 min-w-[60px]"
+                      style={commonStyles}
+                      autoFocus
+                      placeholder="Enter text"
+                    />
+                  ) : (
+                    <div onClick={() => {
+                      if (isSelected && !isPreviewMode) {
+                        setEditingText(styles.labelText || '');
+                      }
+                    }}>
+                      <Label style={commonStyles}>
+                        {styles.labelText || 'Label'}
+                      </Label>
                     </div>
-                  </MuiCard>
+                  )}
                   {isSelected && (
                     <div className="absolute top-full left-0 right-0 mt-2 z-10">
                       <ComponentStyler
@@ -880,14 +983,52 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
                   onClick={(e) => !isPreviewMode && handleComponentClick(id, e)}
                   draggable={!isPreviewMode}
                   onDragStart={(e) => handleComponentDragStart(e, id)}>
-                  <AntdCard 
-                    title={styles.cardTitle || "Ant Design Card"}
-                    style={commonStyles}
-                  >
-                    <p style={{ color: styles?.textColor }}>
-                      {styles.cardContent === undefined || styles.cardContent === null ? 'This is an Ant Design card with a title and content area.' : styles.cardContent}
-                    </p>
-                  </AntdCard>
+                  {isSelected && !isPreviewMode && (
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-md z-50 bg-red-500 hover:bg-red-600 border-2 border-white"
+                      onClick={handleDelete}
+                    >
+                      <FiTrash2 className="h-3 w-3 text-white" />
+                    </Button>
+                  )}
+                  {isSelected && !isPreviewMode ? (
+                    <input
+                      type="text"
+                      value={editingText !== null ? editingText : (styles.labelText || '')}
+                      onChange={(e) => setEditingText(e.target.value)}
+                      onBlur={() => {
+                        if (editingText !== null) {
+                          handleLabelTextChange(id, editingText);
+                        }
+                        setEditingText(null);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          if (editingText !== null) {
+                            handleLabelTextChange(id, editingText);
+                          }
+                          setEditingText(null);
+                        }
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      className="bg-transparent border-b border-dashed border-gray-400 focus:outline-none px-1 min-w-[60px]"
+                      style={commonStyles}
+                      autoFocus
+                      placeholder="Enter text"
+                    />
+                  ) : (
+                    <div onClick={() => {
+                      if (isSelected && !isPreviewMode) {
+                        setEditingText(styles.labelText || '');
+                      }
+                    }}>
+                      <AntdLabel style={commonStyles}>
+                        {styles.labelText || 'Label'}
+                      </AntdLabel>
+                    </div>
+                  )}
                   {isSelected && (
                     <div className="absolute top-full left-0 right-0 mt-2 z-10">
                       <ComponentStyler
@@ -906,24 +1047,52 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
                   onClick={(e) => !isPreviewMode && handleComponentClick(id, e)}
                   draggable={!isPreviewMode}
                   onDragStart={(e) => handleComponentDragStart(e, id)}>
-                  <Card
-                    style={{
-                      ...commonStyles,
-                      fontFamily: 'var(--font-sans)',
-                      borderRadius: 'var(--radius)',
-                      boxShadow: 'var(--shadow)',
-                    }}
-                    className="p-6"
-                  >
-                    <div className="space-y-2">
-                      <h3 className="text-lg font-medium" style={{ color: styles?.textColor }}>
-                        {styles.cardTitle || 'Shadcn Card'}
-                      </h3>
-                      <p className="text-sm text-muted-foreground" style={{ color: styles?.textColor }}>
-                        {styles.cardContent === undefined || styles.cardContent === null ? 'This is a shadcn/ui card component with minimal styling.' : styles.cardContent}
-                      </p>
+                  {isSelected && !isPreviewMode && (
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-md z-50 bg-red-500 hover:bg-red-600 border-2 border-white"
+                      onClick={handleDelete}
+                    >
+                      <FiTrash2 className="h-3 w-3 text-white" />
+                    </Button>
+                  )}
+                  {isSelected && !isPreviewMode ? (
+                    <input
+                      type="text"
+                      value={editingText !== null ? editingText : (styles.labelText || '')}
+                      onChange={(e) => setEditingText(e.target.value)}
+                      onBlur={() => {
+                        if (editingText !== null) {
+                          handleLabelTextChange(id, editingText);
+                        }
+                        setEditingText(null);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          if (editingText !== null) {
+                            handleLabelTextChange(id, editingText);
+                          }
+                          setEditingText(null);
+                        }
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      className="bg-transparent border-b border-dashed border-gray-400 focus:outline-none px-1 min-w-[60px]"
+                      style={commonStyles}
+                      autoFocus
+                      placeholder="Enter text"
+                    />
+                  ) : (
+                    <div onClick={() => {
+                      if (isSelected && !isPreviewMode) {
+                        setEditingText(styles.labelText || '');
+                      }
+                    }}>
+                      <Label style={commonStyles}>
+                        {styles.labelText || 'Label'}
+                      </Label>
                     </div>
-                  </Card>
+                  )}
                   {isSelected && (
                     <div className="absolute top-full left-0 right-0 mt-2 z-10">
                       <ComponentStyler
@@ -937,7 +1106,7 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
               );
           }
         default:
-          return <div>Unknown Component</div>;
+          return null;
       }
     };
 
@@ -989,7 +1158,7 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
               <Button 
                 variant="destructive" 
                 size="sm" 
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 text-black"
                 disabled={components.length === 0 || isPreviewMode}
               >
                 <FiTrash2 className="w-4 h-4" />
@@ -1005,10 +1174,37 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleReset}>Reset</AlertDialogAction>
+                <AlertDialogAction onClick={() => {
+                  handleReset();
+                  updateHistory([]);
+                }}>
+                  Reset
+                </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2"
+            onClick={handleUndo}
+            disabled={currentHistoryIndex === 0 || isPreviewMode}
+          >
+            <FiRotateCcw className="w-4 h-4" />
+            Undo
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2"
+            onClick={handleRedo}
+            disabled={currentHistoryIndex === history.length - 1 || isPreviewMode}
+          >
+            <FiRotateCw className="w-4 h-4" />
+            Redo
+          </Button>
 
           <Button
             variant="outline"

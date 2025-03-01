@@ -61,6 +61,7 @@ const ComponentStyler: React.FC<ComponentStylerProps> = ({ componentType, onStyl
     // Effects
     opacity: initialStyles.opacity || '100',
     shadow: initialStyles.shadow || 'none',
+    labelText: initialStyles.labelText || 'Label',
   });
 
   // Track expanded sections
@@ -114,6 +115,7 @@ const ComponentStyler: React.FC<ComponentStylerProps> = ({ componentType, onStyl
         opacity: "100",
         cardTitle: "",
         cardContent: "",
+        labelText: ""
       },
       Input: {
         placeholder: "Input field",
@@ -138,6 +140,7 @@ const ComponentStyler: React.FC<ComponentStylerProps> = ({ componentType, onStyl
         buttonText: "",
         cardTitle: "",
         cardContent: "",
+        labelText: ""
       },
       Card: {
         backgroundColor: "#ffffff",
@@ -162,6 +165,32 @@ const ComponentStyler: React.FC<ComponentStylerProps> = ({ componentType, onStyl
         opacity: "100",
         placeholder: "",
         buttonText: "",
+        labelText: ""
+      },
+      Label: {
+        backgroundColor: "transparent",
+        textColor: "#374151",
+        fontSize: "0.875rem",
+        fontWeight: "500",
+        width: "auto",
+        height: "auto",
+        padding: "0.25rem 0",
+        margin: "",
+        borderColor: "transparent",
+        borderWidth: "0px",
+        borderStyle: "none",
+        borderRadius: "0",
+        textAlign: "left",
+        letterSpacing: "normal",
+        opacity: "100",
+        shadow: "none",
+        labelText: "Label",
+        variant: "default",
+        size: "default",
+        placeholder: "",
+        buttonText: "",
+        cardTitle: "",
+        cardContent: ""
       }
     };
     
@@ -339,6 +368,16 @@ const ComponentStyler: React.FC<ComponentStylerProps> = ({ componentType, onStyl
             description: 'Card body text'
           },
         ];
+      case 'Label':
+        return [
+          {
+            label: 'Label Text',
+            type: 'input',
+            value: styles.labelText || 'Label',
+            onChange: (value) => handleStyleChange('labelText', value),
+            description: 'Set the label text'
+          }
+        ];
       default:
         return [];
     }
@@ -377,19 +416,23 @@ const ComponentStyler: React.FC<ComponentStylerProps> = ({ componentType, onStyl
         <PopoverTrigger asChild>
           <Button
             variant="outline"
-            size="sm"
-            className="w-full flex items-center justify-center gap-2 bg-white hover:bg-gray-50 shadow-sm"
+            size="default"
+            className="w-full flex items-center justify-center gap-2 bg-white hover:bg-gray-50 shadow-sm py-4 text-base font-medium"
             onClick={() => setIsOpen(true)}
           >
-            <FiSettings className="w-4 h-4" />
+            <FiSettings className="w-5 h-5" />
             <span>Edit Styles</span>
           </Button>
         </PopoverTrigger>
         <PopoverContent 
-          className="w-96 max-h-[80vh] overflow-y-auto p-0 shadow-xl border border-gray-200 rounded-lg z-50 thin-scrollbar"
-          side="top"
-          align="center"
+          className="w-96 max-h-[80vh] overflow-y-auto p-0 shadow-xl border border-gray-200 rounded-lg z-[100]"
+          side="right"
+          align="start"
           sideOffset={5}
+          alignOffset={-5}
+          avoidCollisions={true}
+          collisionPadding={20}
+          style={{ maxWidth: 'calc(100vw - 40px)' }}
         >
           <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-3 rounded-t-lg">
             <div className="flex items-center justify-between">
