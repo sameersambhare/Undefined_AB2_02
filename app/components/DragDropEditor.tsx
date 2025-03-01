@@ -1,6 +1,6 @@
 'use client'
 import React, { useState, useEffect } from "react";
-import { FiMove, FiTrash2, FiSave, FiEye, FiEdit2, FiDownload, FiList, FiCode } from 'react-icons/fi';
+import { FiMove, FiTrash2, FiSave, FiEye, FiEdit2, FiDownload, FiList, FiCode, FiRotateCcw, FiRotateCw } from 'react-icons/fi';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Card } from './ui/card';
@@ -68,6 +68,8 @@ let componentIdCounter = 0;
 
 const DragDropEditor: React.FC = () => {
   const [components, setComponents] = useState<DroppedComponent[]>([]);
+  const [history, setHistory] = useState<DroppedComponent[][]>([[]]); // Add history state
+  const [currentHistoryIndex, setCurrentHistoryIndex] = useState(0); // Add current history index
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [selectedComponent, setSelectedComponent] = useState<string | null>(null);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
@@ -98,6 +100,30 @@ const DragDropEditor: React.FC = () => {
     return `${componentType}-${componentIdCounter}`;
   };
 
+  // Add function to update history
+  const updateHistory = (newComponents: DroppedComponent[]) => {
+    const newHistory = history.slice(0, currentHistoryIndex + 1);
+    newHistory.push([...newComponents]);
+    setHistory(newHistory);
+    setCurrentHistoryIndex(newHistory.length - 1);
+  };
+
+  // Add undo function
+  const handleUndo = () => {
+    if (currentHistoryIndex > 0) {
+      setCurrentHistoryIndex(currentHistoryIndex - 1);
+      setComponents([...history[currentHistoryIndex - 1]]);
+    }
+  };
+
+  // Add redo function
+  const handleRedo = () => {
+    if (currentHistoryIndex < history.length - 1) {
+      setCurrentHistoryIndex(currentHistoryIndex + 1);
+      setComponents([...history[currentHistoryIndex + 1]]);
+    }
+  };
+
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDraggingOver(true);
@@ -117,11 +143,13 @@ const DragDropEditor: React.FC = () => {
 
     // If we're moving an existing component
     if (draggedComponentId) {
-      setComponents(prev => prev.map(comp => 
+      const newComponents = components.map(comp => 
         comp.id === draggedComponentId
           ? { ...comp, position: { x, y } }
           : comp
-      ));
+      );
+      setComponents(newComponents);
+      updateHistory(newComponents); // Add to history
       setDraggedComponentId(null);
       return;
     }
@@ -193,7 +221,9 @@ const DragDropEditor: React.FC = () => {
       library: componentLibrary as 'shadcn' | 'mui' | 'antd'
     };
 
-    setComponents((prev) => [...prev, newComponent]);
+    const newComponents = [...components, newComponent];
+    setComponents(newComponents);
+    updateHistory(newComponents); // Add to history
   };
 
   const handleComponentDragStart = (e: React.DragEvent<HTMLDivElement>, id: string) => {
@@ -207,6 +237,7 @@ const DragDropEditor: React.FC = () => {
 
   const handleReset = () => {
     setComponents([]);
+    updateHistory([]); // Add empty state to history
     setSelectedComponent(null);
   };
 
@@ -612,11 +643,13 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
   };
 
   const handleStyleChange = (componentId: string, newStyles: any) => {
-    setComponents(prev => prev.map(comp => 
+    const newComponents = components.map(comp => 
       comp.id === componentId 
         ? { ...comp, styles: { ...comp.styles, ...newStyles } }
         : comp
-    ));
+    );
+    setComponents(newComponents);
+    updateHistory(newComponents); // Add to history
   };
 
   const renderComponent = (component: DroppedComponent) => {
@@ -1009,6 +1042,28 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2"
+            onClick={handleUndo}
+            disabled={currentHistoryIndex === 0 || isPreviewMode}
+          >
+            <FiRotateCcw className="w-4 h-4" />
+            Undo
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2"
+            onClick={handleRedo}
+            disabled={currentHistoryIndex === history.length - 1 || isPreviewMode}
+          >
+            <FiRotateCw className="w-4 h-4" />
+            Redo
+          </Button>
 
           <Button
             variant="outline"

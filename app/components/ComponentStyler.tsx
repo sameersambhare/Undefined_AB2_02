@@ -375,19 +375,23 @@ const ComponentStyler: React.FC<ComponentStylerProps> = ({ componentType, onStyl
         <PopoverTrigger asChild>
           <Button
             variant="outline"
-            size="sm"
-            className="w-full flex items-center justify-center gap-2 bg-white hover:bg-gray-50 shadow-sm"
+            size="default"
+            className="w-full flex items-center justify-center gap-2 bg-white hover:bg-gray-50 shadow-sm py-4 text-base font-medium"
             onClick={() => setIsOpen(true)}
           >
-            <FiSettings className="w-4 h-4" />
+            <FiSettings className="w-5 h-5" />
             <span>Edit Styles</span>
           </Button>
         </PopoverTrigger>
         <PopoverContent 
-          className="w-96 max-h-[80vh] overflow-y-auto p-0 shadow-xl border border-gray-200 rounded-lg z-50 thin-scrollbar"
-          side="top"
-          align="center"
+          className="w-96 max-h-[80vh] overflow-y-auto p-0 shadow-xl border border-gray-200 rounded-lg z-[100]"
+          side="right"
+          align="start"
           sideOffset={5}
+          alignOffset={-5}
+          avoidCollisions={true}
+          collisionPadding={20}
+          style={{ maxWidth: 'calc(100vw - 40px)' }}
         >
           <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-3 rounded-t-lg">
             <div className="flex items-center justify-between">
