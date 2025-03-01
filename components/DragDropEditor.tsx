@@ -37,6 +37,8 @@ import {
 } from './ui/select';
 import { useAuth } from '@/app/providers/AuthProvider';
 import { useSearchParams } from 'next/navigation';
+// Import the ResizableComponent from the new file
+import ResizableComponent from './ResizableComponent';
 
 // Add type imports for dynamic imports
 type Html2Canvas = typeof import('html2canvas')['default'];
@@ -59,6 +61,16 @@ interface DroppedComponent {
   library?: 'shadcn' | 'mui' | 'antd';
 }
 
+// Define props interface for DragDropEditor
+interface DragDropEditorProps {
+  components?: DroppedComponent[];
+  onAddComponent?: (component: DroppedComponent) => void;
+  onUpdateComponent?: (id: string, newData: DroppedComponent) => void;
+  onDeleteComponent?: (id: string) => void;
+  onResetCanvas?: () => void;
+  isCollaborative?: boolean;
+}
+
 interface SavedLayout {
   _id?: string;
   name: string;
@@ -70,107 +82,15 @@ interface SavedLayout {
 // Add a counter for stable ID generation
 let componentIdCounter = 0;
 
-// Resizable Component Wrapper
-interface ResizableComponentProps {
-  children: React.ReactNode;
-  component: DroppedComponent;
-  isSelected: boolean;
-  isPreviewMode: boolean;
-  onResize: (id: string, width: string, height: string) => void;
-}
-
-const ResizableComponent: React.FC<ResizableComponentProps> = ({
-  children,
-  component,
-  isSelected,
-  isPreviewMode,
-  onResize
+const DragDropEditor: React.FC<DragDropEditorProps> = ({
+  components: externalComponents,
+  onAddComponent,
+  onUpdateComponent,
+  onDeleteComponent,
+  onResetCanvas,
+  isCollaborative = false
 }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [isResizing, setIsResizing] = useState(false);
-  const [startPos, setStartPos] = useState({ x: 0, y: 0 });
-  const [startSize, setStartSize] = useState({ width: 0, height: 0 });
-  
-  // Handle resize start
-  const handleResizeStart = (e: React.MouseEvent) => {
-    if (isPreviewMode) return;
-    
-    e.preventDefault();
-    e.stopPropagation();
-    
-    if (containerRef.current) {
-      const { width, height } = containerRef.current.getBoundingClientRect();
-      setStartSize({ width, height });
-      setStartPos({ x: e.clientX, y: e.clientY });
-      setIsResizing(true);
-    }
-  };
-
-  // Handle resize move
-  const handleResizeMove = (e: MouseEvent) => {
-    if (!isResizing) return;
-    
-    const deltaX = e.clientX - startPos.x;
-    const deltaY = e.clientY - startPos.y;
-    
-    let newWidth = Math.max(20, startSize.width + deltaX);
-    let newHeight = Math.max(20, startSize.height + deltaY);
-    
-    // Maintain aspect ratio for Circle
-    if (component.type === 'Circle') {
-      newHeight = newWidth;
-    }
-    
-    // Special case for Line component
-    if (component.type === 'Line') {
-      newHeight = 0;
-    }
-    
-    // Update component size
-    onResize(component.id, `${newWidth}px`, `${newHeight}px`);
-  };
-
-  // Handle resize end
-  const handleResizeEnd = () => {
-    setIsResizing(false);
-  };
-
-  // Add and remove event listeners
-  useEffect(() => {
-    if (isResizing) {
-      window.addEventListener('mousemove', handleResizeMove);
-      window.addEventListener('mouseup', handleResizeEnd);
-    }
-    
-    return () => {
-      window.removeEventListener('mousemove', handleResizeMove);
-      window.removeEventListener('mouseup', handleResizeEnd);
-    };
-  }, [isResizing, startPos, startSize]);
-
-  return (
-    <div 
-      ref={containerRef}
-      className="relative"
-    >
-      {children}
-      
-      {/* Resize handle - only show when selected and not in preview mode */}
-      {isSelected && !isPreviewMode && (
-        <div 
-          className="absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize flex items-center justify-center bg-white dark:bg-zinc-700 border border-gray-300 dark:border-zinc-600 rounded-sm shadow-sm z-10"
-          onMouseDown={handleResizeStart}
-          title="Resize"
-        >
-          <FiCornerRightDown className="w-3 h-3 text-orange-500" />
-        </div>
-      )}
-    </div>
-  );
-};
-
-const DragDropEditor: React.FC = () => {
-  const [components, setComponents] = useState<DroppedComponent[]>([]);
+  const [components, setComponents] = useState<DroppedComponent[]>(externalComponents || []);
   const [history, setHistory] = useState<DroppedComponent[][]>([[]]); // Add history state
   const [currentHistoryIndex, setCurrentHistoryIndex] = useState(0); // Add current history index
   const [isDraggingOver, setIsDraggingOver] = useState(false);
@@ -191,6 +111,13 @@ const DragDropEditor: React.FC = () => {
 
   // Add auth context
   const { user } = useAuth();
+
+  // Update local components when external components change (for collaborative mode)
+  useEffect(() => {
+    if (isCollaborative && externalComponents) {
+      setComponents(externalComponents);
+    }
+  }, [externalComponents, isCollaborative]);
 
   // Replace localStorage loading with API fetch
   useEffect(() => {
@@ -345,7 +272,30 @@ const DragDropEditor: React.FC = () => {
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
+    
+    // If we're dragging a component from the sidebar, just show the drag indicator
+    if (!draggedComponentId || !e.dataTransfer.types.includes('componentId')) {
     setIsDraggingOver(true);
+      return;
+    }
+    
+    // For existing components being moved
+    const componentId = e.dataTransfer.getData('componentId');
+    
+    // Skip if we don't have the component ID yet (it's not available until drop in some browsers)
+    if (!componentId && draggedComponentId) {
+      // Use the draggedComponentId state instead
+      const component = components.find(comp => comp.id === draggedComponentId);
+      if (!component) return;
+      
+      // Calculate new position
+      const canvasRect = e.currentTarget.getBoundingClientRect();
+      const newX = e.clientX - canvasRect.left;
+      const newY = e.clientY - canvasRect.top;
+      
+      // Move the component in real-time
+      handleComponentMove(draggedComponentId, { x: newX, y: newY });
+    }
   };
 
   const handleDragLeave = () => {
@@ -356,198 +306,73 @@ const DragDropEditor: React.FC = () => {
     e.preventDefault();
     setIsDraggingOver(false);
 
-    const rect = e.currentTarget.getBoundingClientRect();
-    const scrollTop = e.currentTarget.scrollTop;
-    const scrollLeft = e.currentTarget.scrollLeft;
-    const x = e.clientX - rect.left + scrollLeft;
-    const y = e.clientY - rect.top + scrollTop;
-
-    // If we're moving an existing component
-    if (draggedComponentId) {
-      const newComponents = components.map(comp => 
-        comp.id === draggedComponentId
-          ? { ...comp, position: { x, y } }
-          : comp
-      );
-      setComponents(newComponents);
-      updateHistory(newComponents);
+    // Check if we're dropping an existing component
+    const componentId = e.dataTransfer.getData('componentId');
+    if (componentId) {
+      // This is an existing component being moved
+      const canvasRect = e.currentTarget.getBoundingClientRect();
+      const newX = e.clientX - canvasRect.left;
+      const newY = e.clientY - canvasRect.top;
+      
+      // Update the component position
+      handleComponentMove(componentId, { x: newX, y: newY });
       setDraggedComponentId(null);
       return;
     }
 
-    // If we're adding a new component
+    // If not a component being moved, handle as a new component from the sidebar
     const componentType = e.dataTransfer.getData('componentType');
     const componentStyles = JSON.parse(e.dataTransfer.getData('componentStyles') || '{}');
-    const componentLibrary = e.dataTransfer.getData('componentLibrary') || 'shadcn';
-
-    // Default styles based on component type if no styles are provided
-    const defaultButtonStyles = {
-      variant: "default",
-      size: "default",
-      backgroundColor: "#f97316", // orange-500
-      textColor: "#ffffff",
-      borderColor: "transparent",
-      borderWidth: "1px",
-      borderStyle: "solid",
-      borderRadius: "0.375rem", // rounded-md
-      padding: "0.5rem 1rem",
-      fontSize: "0.875rem", // text-sm
-      fontWeight: "500", // font-medium
-      width: "auto",
-      height: "auto",
-      shadow: "sm",
-      buttonText: "Button", // Default button text
-    };
-
-    const defaultStyles = {
-      Button: defaultButtonStyles,
-      Input: {
-        placeholder: "Input field",
-        backgroundColor: "#ffffff",
-        borderColor: "#d1d5db", // gray-300
-        borderWidth: "1px",
-        borderStyle: "solid",
-        borderRadius: "0.375rem", // rounded-md
-        padding: "0.5rem 0.75rem",
-        fontSize: "0.875rem", // text-sm
-        width: "100%",
-        height: "auto",
-        textColor: "#374151", // gray-700
-      },
-      Card: {
-        backgroundColor: "#ffffff",
-        borderColor: "#e5e7eb", // gray-200
-        borderWidth: "1px",
-        borderStyle: "solid",
-        borderRadius: "0.5rem", // rounded-lg
-        padding: "1rem",
-        width: "100%",
-        height: "auto",
-        shadow: "sm",
-        textColor: "#374151", // gray-700
-        cardTitle: "Card Title", // Add default card title
-        cardContent: "Card Content", // Add default card content
-      },
-      Rectangle: {
-        backgroundColor: "#f97316", // orange-500
-        borderColor: "#f97316", // orange-500
-        borderWidth: "2px",
-        borderStyle: "solid",
-        borderRadius: "0.375rem", // rounded-md
-        width: "100px",
-        height: "60px",
-        shadow: "sm",
-        opacity: 100,
-      },
-      Circle: {
-        backgroundColor: "#f97316", // orange-500
-        borderColor: "#f97316", // orange-500
-        borderWidth: "2px",
-        borderStyle: "solid",
-        borderRadius: "9999px", // fully rounded
-        width: "80px",
-        height: "80px",
-        shadow: "sm",
-        opacity: 100,
-      },
-      Line: {
-        backgroundColor: "transparent",
-        borderColor: "#f97316", // orange-500
-        borderWidth: "2px",
-        borderStyle: "solid",
-        width: "100px",
-        height: "0",
-        shadow: "none",
-        opacity: 100,
-      },
-      Dropdown: {
-        backgroundColor: "#ffffff",
-        textColor: "#374151", // gray-700
-        borderColor: "#d1d5db", // gray-300
-        borderWidth: "1px",
-        borderStyle: "solid",
-        borderRadius: "0.375rem", // rounded-md
-        padding: "0.5rem 0.75rem",
-        fontSize: "0.875rem", // text-sm
-        width: "100%",
-        height: "auto",
-        shadow: "sm",
-        dropdownText: "Select option", // Default dropdown text
-      },
-      Badge: {
-        backgroundColor: "#f97316", // orange-500
-        textColor: "#ffffff",
-        borderColor: "transparent",
-        borderWidth: "1px",
-        borderStyle: "solid",
-        borderRadius: "9999px", // fully rounded
-        padding: "0.25rem 0.5rem",
-        fontSize: "0.75rem", // text-xs
-        fontWeight: "500", // font-medium
-        width: "auto",
-        height: "auto",
-        shadow: "none",
-        badgeText: "New", // Default badge text
-      },
-      Avatar: {
-        backgroundColor: "#f97316", // orange-500
-        textColor: "#ffffff",
-        borderColor: "transparent",
-        borderWidth: "2px",
-        borderStyle: "solid",
-        borderRadius: "9999px", // fully rounded
-        width: "40px",
-        height: "40px",
-        shadow: "none",
-        opacity: 100,
-        avatarText: "JD", // Default avatar text (initials)
-      },
-      Divider: {
-        backgroundColor: "transparent",
-        borderColor: "#e5e7eb", // gray-200
-        borderWidth: "1px",
-        borderTopWidth: "1px",
-        borderStyle: "solid",
-        width: "200px",
-        height: "0",
-        shadow: "none",
-        opacity: 100,
-      },
-      Text: {
-        backgroundColor: "transparent",
-        textColor: "#374151", // gray-700
-        fontSize: "0.875rem", // text-sm
-        fontWeight: "400", // font-normal
-        width: "auto",
-        height: "auto",
-        textAlign: "left",
-        letterSpacing: "normal",
-        textContent: "Text content", // Default text content
-      }
-    };
-
-    // Merge default styles with provided styles
-    const mergedStyles = {
-      ...(defaultStyles[componentType as keyof typeof defaultStyles] || {}),
-      ...componentStyles
-    };
+    const componentLibrary = e.dataTransfer.getData('componentLibrary') as 'shadcn' | 'mui' | 'antd';
+    
+    if (!componentType) return;
+    
+    const canvasRect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - canvasRect.left;
+    const y = e.clientY - canvasRect.top;
 
     const newComponent: DroppedComponent = {
-      id: generateComponentId(componentType),
+      id: `${componentType}-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       type: componentType,
       position: { x, y },
-      styles: mergedStyles,
-      library: componentLibrary as 'shadcn' | 'mui' | 'antd'
+      styles: componentStyles,
+      library: componentLibrary,
     };
 
+    // For collaborative mode, use the provided callback
+    if (isCollaborative && onAddComponent) {
+      onAddComponent(newComponent);
+    } else {
+      // For non-collaborative mode, update local state
     const newComponents = [...components, newComponent];
     setComponents(newComponents);
-    updateHistory(newComponents); // Add to history
+      
+      // Add to history
+      const newHistory = history.slice(0, currentHistoryIndex + 1);
+      newHistory.push(newComponents);
+      setHistory(newHistory);
+      setCurrentHistoryIndex(newHistory.length - 1);
+    }
   };
 
   const handleComponentDragStart = (e: React.DragEvent<HTMLDivElement>, id: string) => {
     e.stopPropagation();
     setDraggedComponentId(id);
+    
+    // Store the initial mouse position relative to the component
+    const component = components.find(comp => comp.id === id);
+    if (!component) return;
+    
+    // Calculate the offset of the mouse from the component's center
+    const rect = e.currentTarget.getBoundingClientRect();
+    const offsetX = e.clientX - rect.left - rect.width / 2;
+    const offsetY = e.clientY - rect.top - rect.height / 2;
+    
+    // Store this offset in the dataTransfer
+    e.dataTransfer.setData('offsetX', offsetX.toString());
+    e.dataTransfer.setData('offsetY', offsetY.toString());
+    e.dataTransfer.setData('componentId', id);
+    
     // Set a transparent drag image
     const dragImage = new Image();
     dragImage.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
@@ -1094,34 +919,331 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
     setSelectedComponent(null);
   };
 
-  const handleStyleChange = (componentId: string, newStyles: any) => {
-    const newComponents = components.map(comp => 
-      comp.id === componentId 
-        ? { ...comp, styles: { ...comp.styles, ...newStyles } }
-        : comp
-    );
+  const handleStyleChange = (id: string, styles: any) => {
+    const componentIndex = components.findIndex(comp => comp.id === id);
+    if (componentIndex === -1) return;
+    
+    const updatedComponent = {
+      ...components[componentIndex],
+      styles: {
+        ...components[componentIndex].styles,
+        ...styles
+      }
+    };
+    
+    // For collaborative mode, use the provided callback
+    if (isCollaborative && onUpdateComponent) {
+      onUpdateComponent(id, updatedComponent);
+    } else {
+      // For non-collaborative mode, update local state
+      const newComponents = [...components];
+      newComponents[componentIndex] = updatedComponent;
     setComponents(newComponents);
-    updateHistory(newComponents); // Add to history
+    }
   };
 
   const handleComponentResize = (id: string, width: string, height: string) => {
-    const newComponents = components.map(comp => {
-      if (comp.id === id) {
-        const newStyles = { ...comp.styles, width, height };
-        
-        // For Circle, ensure width and height are the same
-        if (comp.type === 'Circle') {
-          newStyles.height = width;
-        }
-        
-        return { ...comp, styles: newStyles };
-      }
-      return comp;
-    });
+    const componentIndex = components.findIndex(comp => comp.id === id);
+    if (componentIndex === -1) return;
     
-    setComponents(newComponents);
-    updateHistory(newComponents);
+    const updatedComponent = {
+      ...components[componentIndex],
+      styles: {
+        ...components[componentIndex].styles,
+        width,
+        height
+      }
+    };
+    
+    // For collaborative mode, use the provided callback
+    if (isCollaborative && onUpdateComponent) {
+      onUpdateComponent(id, updatedComponent);
+    } else {
+      // For non-collaborative mode, update local state
+      const newComponents = [...components];
+      newComponents[componentIndex] = updatedComponent;
+      setComponents(newComponents);
+    }
   };
+
+  const handleComponentMove = (id: string, newPosition: { x: number; y: number }) => {
+    const componentIndex = components.findIndex(comp => comp.id === id);
+    if (componentIndex === -1) return;
+    
+    const updatedComponent = {
+      ...components[componentIndex],
+      position: newPosition
+    };
+    
+    // For collaborative mode, use the provided callback
+    if (isCollaborative && onUpdateComponent) {
+      onUpdateComponent(id, updatedComponent);
+    } else {
+      // For non-collaborative mode, update local state
+      const newComponents = [...components];
+      newComponents[componentIndex] = updatedComponent;
+      setComponents(newComponents);
+      
+      // Don't update history during active dragging to prevent infinite loops
+      // The history will be updated on mouse up instead
+    }
+  };
+
+  const handleDeleteComponent = (id: string) => {
+    // For collaborative mode, use the provided callback
+    if (isCollaborative && onDeleteComponent) {
+      onDeleteComponent(id);
+      if (selectedComponent === id) {
+        setSelectedComponent(null);
+      }
+    } else {
+      // For non-collaborative mode, update local state
+      const newComponents = components.filter(comp => comp.id !== id);
+      setComponents(newComponents);
+      
+      if (selectedComponent === id) {
+        setSelectedComponent(null);
+      }
+      
+      // Add to history
+      const newHistory = history.slice(0, currentHistoryIndex + 1);
+      newHistory.push(newComponents);
+      setHistory(newHistory);
+      setCurrentHistoryIndex(newHistory.length - 1);
+    }
+  };
+
+  // Add state for tracking component mouse movement
+  const [isMoving, setIsMoving] = useState(false);
+  const [moveOffset, setMoveOffset] = useState({ x: 0, y: 0 });
+  
+  // Create refs at the top level of the component
+  const componentsRef = React.useRef(components);
+  const selectedComponentRef = React.useRef(selectedComponent);
+  
+  // Handle mouse movement for components
+  const handleMouseDown = (e: React.MouseEvent, componentId: string) => {
+    if (isPreviewMode) return;
+    
+    e.stopPropagation();
+    
+    const component = components.find(comp => comp.id === componentId);
+    if (!component) return;
+    
+    // Calculate offset from mouse position to component position
+    const canvasRect = e.currentTarget.parentElement?.parentElement?.getBoundingClientRect();
+    if (!canvasRect) return;
+
+    // Calculate the offset from the mouse position to the component's origin
+    const offsetX = e.clientX - canvasRect.left - component.position.x;
+    const offsetY = e.clientY - canvasRect.top - component.position.y;
+    
+    setMoveOffset({ x: offsetX, y: offsetY });
+    setSelectedComponent(componentId);
+    setIsMoving(true);
+  };
+  
+  // Handle mouse move for the entire canvas
+  useEffect(() => {
+    // Keep refs in sync with state
+    componentsRef.current = components;
+    selectedComponentRef.current = selectedComponent;
+    
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isMoving || isPreviewMode || !selectedComponentRef.current || !canvasRef) return;
+      
+      // Get canvas position
+      const canvasRect = canvasRef.getBoundingClientRect();
+      
+      // Calculate new position within the canvas
+      const x = e.clientX - canvasRect.left - moveOffset.x;
+      const y = e.clientY - canvasRect.top - moveOffset.y;
+      
+      // Update component position without updating history
+      handleComponentMove(selectedComponentRef.current, { x, y });
+    };
+    
+    const handleMouseUp = () => {
+      if (isMoving && selectedComponentRef.current) {
+        setIsMoving(false);
+        
+        // Use a functional update to avoid dependency on components state
+        setHistory(prevHistory => {
+          const newHistory = prevHistory.slice(0, currentHistoryIndex + 1);
+          newHistory.push([...componentsRef.current]); // Use the ref to get current components
+          return newHistory;
+        });
+        
+        // Use functional update
+        setCurrentHistoryIndex(prevIndex => prevIndex + 1);
+      }
+    };
+    
+    // Add event listeners
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    
+    // Clean up
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isMoving, moveOffset, canvasRef, isPreviewMode, currentHistoryIndex]);
+  // Removed selectedComponent and components from the dependency array
+  // since we're using refs to access their current values
+
+  // Add an event listener for the addComponent custom event
+  useEffect(() => {
+    if (!canvasRef) return;
+    
+    const handleAddComponentEvent = (e: any) => {
+      const { componentType, styles, library } = e.detail;
+      
+      // Calculate center of canvas for component placement
+      const canvasRect = canvasRef.getBoundingClientRect();
+      const x = canvasRect.width / 2;
+      const y = 100; // Place near the top
+      
+      const newComponent: DroppedComponent = {
+        id: `${componentType}-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        type: componentType,
+        position: { x, y },
+        styles: styles || {},
+        library,
+      };
+      
+      // For collaborative mode, use the provided callback
+      if (isCollaborative && onAddComponent) {
+        onAddComponent(newComponent);
+      } else {
+        // For non-collaborative mode, update local state
+        const newComponents = [...components, newComponent];
+    setComponents(newComponents);
+        
+        // Add to history
+        const newHistory = history.slice(0, currentHistoryIndex + 1);
+        newHistory.push(newComponents);
+        setHistory(newHistory);
+        setCurrentHistoryIndex(newHistory.length - 1);
+      }
+    };
+    
+    // Add the event listener to the document so it can be triggered from the sidebar
+    document.addEventListener('addComponent', handleAddComponentEvent);
+    
+    return () => {
+      document.removeEventListener('addComponent', handleAddComponentEvent);
+    };
+  }, [canvasRef, components, currentHistoryIndex, history, isCollaborative, onAddComponent]);
+
+  // Add support for touch events by enhancing handleTouchStart
+  const handleTouchStart = (e: React.TouchEvent, componentId: string) => {
+    if (isPreviewMode) return;
+    
+    e.stopPropagation();
+    
+    const component = components.find(comp => comp.id === componentId);
+    if (!component) return;
+    
+    // Calculate offset from touch position to component position
+    const touch = e.touches[0];
+    const canvasRect = e.currentTarget.parentElement?.parentElement?.getBoundingClientRect();
+    if (!canvasRect) return;
+    
+    // Calculate the offset from the touch position to the component's origin
+    const offsetX = touch.clientX - canvasRect.left - component.position.x;
+    const offsetY = touch.clientY - canvasRect.top - component.position.y;
+    
+    setMoveOffset({ x: offsetX, y: offsetY });
+    setSelectedComponent(componentId);
+    setIsMoving(true);
+  };
+
+  // Add touch event handlers to your useEffect for mouse movement
+  useEffect(() => {
+    // Keep refs in sync with state
+    componentsRef.current = components;
+    selectedComponentRef.current = selectedComponent;
+    
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isMoving || isPreviewMode || !selectedComponentRef.current || !canvasRef) return;
+      
+      // Get canvas position
+      const canvasRect = canvasRef.getBoundingClientRect();
+      
+      // Calculate new position within the canvas
+      const x = e.clientX - canvasRect.left - moveOffset.x;
+      const y = e.clientY - canvasRect.top - moveOffset.y;
+      
+      // Update component position without updating history
+      handleComponentMove(selectedComponentRef.current, { x, y });
+    };
+    
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isMoving || isPreviewMode || !selectedComponentRef.current || !canvasRef) return;
+      
+      // Prevent default to avoid scrolling while dragging
+      e.preventDefault();
+      
+      const touch = e.touches[0];
+      
+      // Get canvas position
+      const canvasRect = canvasRef.getBoundingClientRect();
+      
+      // Calculate new position within the canvas
+      const x = touch.clientX - canvasRect.left - moveOffset.x;
+      const y = touch.clientY - canvasRect.top - moveOffset.y;
+      
+      // Update component position without updating history
+      handleComponentMove(selectedComponentRef.current, { x, y });
+    };
+    
+    const handleMouseUp = () => {
+      if (isMoving && selectedComponentRef.current) {
+        setIsMoving(false);
+        
+        // Use a functional update to avoid dependency on components state
+        setHistory(prevHistory => {
+          const newHistory = prevHistory.slice(0, currentHistoryIndex + 1);
+          newHistory.push([...componentsRef.current]); // Use the ref to get current components
+          return newHistory;
+        });
+        
+        // Use functional update
+        setCurrentHistoryIndex(prevIndex => prevIndex + 1);
+      }
+    };
+    
+    const handleTouchEnd = () => {
+      if (isMoving && selectedComponentRef.current) {
+        setIsMoving(false);
+        
+        // Use a functional update to avoid dependency on components state
+        setHistory(prevHistory => {
+          const newHistory = prevHistory.slice(0, currentHistoryIndex + 1);
+          newHistory.push([...componentsRef.current]); // Use the ref to get current components
+          return newHistory;
+        });
+        
+        // Use functional update
+        setCurrentHistoryIndex(prevIndex => prevIndex + 1);
+      }
+    };
+    
+    // Add event listeners
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('touchmove', handleTouchMove, { passive: false });
+    window.addEventListener('touchend', handleTouchEnd);
+    
+    // Clean up
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [isMoving, moveOffset, canvasRef, isPreviewMode, currentHistoryIndex, handleComponentMove]);
 
   const renderComponent = (component: DroppedComponent) => {
     const { type, styles, id, library = 'shadcn' } = component;
@@ -1149,14 +1271,11 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
                  styles?.shadow === 'xl' ? '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)' : 'none',
     };
 
-    const wrapperClasses = `relative group ${isPreviewMode ? '' : 'cursor-move'} ${isSelected ? 'ring-2 ring-orange-500 ring-offset-2' : ''}`;
+    const wrapperClasses = `relative group ${isPreviewMode ? '' : 'cursor-move touch-none'} ${isSelected ? 'ring-2 ring-orange-500 ring-offset-2' : ''}`;
 
     const handleDelete = (e: React.MouseEvent) => {
       e.stopPropagation();
-      const newComponents = components.filter(comp => comp.id !== id);
-      setComponents(newComponents);
-      updateHistory(newComponents);
-      setSelectedComponent(null);
+      handleDeleteComponent(id);
     };
 
     // Import the components dynamically based on the library
@@ -1673,80 +1792,12 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
   };
 
   return (
-    <div className="flex-1 flex flex-col h-[90vh]">
-      <div className="flex justify-between items-center p-4 bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-700">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-zinc-100">Editor Canvas</h2>
-      </div>
-      <div
-        ref={setCanvasRef}
-        className={`flex-1 bg-white dark:bg-zinc-800 border-2 ${
-          isDraggingOver && !isPreviewMode ? 'border-orange-500 border-dashed' : 'border-gray-200 dark:border-zinc-700'
-        } relative overflow-y-scroll overflow-x-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:transparent [&::-webkit-scrollbar-thumb]:bg-gray-300 dark:[&::-webkit-scrollbar-thumb]:bg-zinc-600`}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        onClick={handleCanvasClick}
-      >
-        <div className="min-h-full w-full relative" style={{ minHeight: '100%', height: '200%' }}>
-          {components.length === 0 && !isPreviewMode && (
-            <div className="absolute left-1/2 transform -translate-x-1/2 top-20 flex flex-col items-center justify-center text-gray-400">
-              <FiMove className="w-8 h-8 mb-2" />
-              <p className="text-sm">Drag and drop components here</p>
-            </div>
-          )}
-
-          {components.map((component) => (
-            <div
-              key={component.id}
-              className={`absolute ${isPreviewMode ? '' : 'cursor-move'}`}
-              style={{
-                left: `${component.position.x}px`,
-                top: `${component.position.y}px`,
-                transform: 'translate(-50%, -50%)',
-              }}
-            >
-              <ResizableComponent
-                component={component}
-                isSelected={selectedComponent === component.id}
-                isPreviewMode={isPreviewMode}
-                onResize={handleComponentResize}
-              >
-                {renderComponent(component)}
-              </ResizableComponent>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Footer with actions */}
-      <div className="flex justify-between items-center px-4 py-3 bg-gray-50 dark:bg-zinc-800 border-x-2 border-b-2 border-gray-200 dark:border-zinc-700 rounded-b-lg">
-        <div className="flex gap-2">
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button 
-                variant="destructive" 
-                size="sm" 
-                className="flex items-center gap-2"
-                disabled={components.length === 0 || isPreviewMode}
-              >
-                <FiTrash2 className="w-4 h-4" />
-                Reset Canvas
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent className="bg-white/80 dark:bg-zinc-800/80 backdrop-blur-md border border-gray-200 dark:border-zinc-700">
-              <AlertDialogHeader>
-                <AlertDialogTitle>Reset Canvas</AlertDialogTitle>
-                <AlertDialogDescription className="dark:text-zinc-300">
-                  Are you sure you want to reset the canvas? This will remove all components and cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleReset}>Reset</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-
+    <div className="flex-1 flex flex-col h-[90vh] w-full">
+      <div className="flex flex-col sm:flex-row justify-between items-center p-2 sm:p-4 bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-700">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-zinc-100 mb-2 sm:mb-0">Editor Canvas</h2>
+        
+        {/* Move preview button to header on mobile */}
+        <div className="flex gap-2 w-full sm:w-auto justify-end">
           <Button
             variant="outline"
             size="sm"
@@ -1931,6 +1982,41 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+        </div>
+      </div>
+      <div className="flex-1 flex flex-col h-[90vh] w-full">
+        <div 
+          ref={(el) => setCanvasRef(el)}
+          className={`flex-1 relative overflow-auto border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 ${isDraggingOver ? 'bg-orange-50 dark:bg-orange-900/20' : ''}`}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onClick={handleCanvasClick}
+          style={{ minHeight: '500px', width: '100%' }}
+        >
+          {components.map((component) => (
+            <div
+              key={component.id}
+              className={`absolute ${isPreviewMode ? '' : 'cursor-move touch-none'}`}
+              style={{
+                left: `${component.position.x}px`,
+                top: `${component.position.y}px`,
+                transform: 'translate(-50%, -50%)',
+                touchAction: 'none', // Prevent touch scrolling while dragging
+              }}
+              onMouseDown={(e) => !isPreviewMode && handleMouseDown(e, component.id)}
+              onTouchStart={(e) => !isPreviewMode && handleTouchStart(e, component.id)}
+            >
+              <ResizableComponent
+                component={component}
+                isSelected={selectedComponent === component.id}
+                isPreviewMode={isPreviewMode}
+                onResize={handleComponentResize}
+              >
+                {renderComponent(component)}
+              </ResizableComponent>
+            </div>
+          ))}
         </div>
       </div>
     </div>

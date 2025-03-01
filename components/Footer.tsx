@@ -15,10 +15,10 @@ const Footer: React.FC = () => {
 
   return (
     <footer className="bg-gray-50 dark:bg-zinc-900 border-t border-gray-200 dark:border-zinc-800">
-      <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+      <div className="max-w-7xl mx-auto py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-2 gap-8 sm:grid-cols-2 md:grid-cols-4">
           {/* Company Info */}
-          <div className="col-span-1 md:col-span-1">
+          <div className="col-span-2 sm:col-span-1">
             <Link href="/" className="text-xl font-bold text-orange-500 dark:text-orange-400">
               SnapUI
             </Link>
@@ -53,25 +53,25 @@ const Footer: React.FC = () => {
             <ul className="mt-4 space-y-2">
               <li>
                 <Link href="/" className="flex items-center space-x-2 text-gray-600 dark:text-zinc-400 hover:text-orange-500 dark:hover:text-orange-400 transition-colors">
-                  <FiHome className="w-4 h-4" />
+                  <FiHome className="w-4 h-4 flex-shrink-0" />
                   <span>Home</span>
                 </Link>
               </li>
               <li>
                 <Link href="/about" className="flex items-center space-x-2 text-gray-600 dark:text-zinc-400 hover:text-orange-500 dark:hover:text-orange-400 transition-colors">
-                  <FiInfo className="w-4 h-4" />
+                  <FiInfo className="w-4 h-4 flex-shrink-0" />
                   <span>About Us</span>
                 </Link>
               </li>
               <li>
                 <Link href="/contact" className="flex items-center space-x-2 text-gray-600 dark:text-zinc-400 hover:text-orange-500 dark:hover:text-orange-400 transition-colors">
-                  <FiMail className="w-4 h-4" />
+                  <FiMail className="w-4 h-4 flex-shrink-0" />
                   <span>Contact Us</span>
                 </Link>
               </li>
               <li>
                 <Link href="/createui" className="flex items-center space-x-2 text-gray-600 dark:text-zinc-400 hover:text-orange-500 dark:hover:text-orange-400 transition-colors">
-                  <FiEdit className="w-4 h-4" />
+                  <FiEdit className="w-4 h-4 flex-shrink-0" />
                   <span>Create UI</span>
                 </Link>
               </li>
@@ -86,25 +86,25 @@ const Footer: React.FC = () => {
             <ul className="mt-4 space-y-2">
               <li>
                 <a href="#" className="flex items-center space-x-2 text-gray-600 dark:text-zinc-400 hover:text-orange-500 dark:hover:text-orange-400 transition-colors">
-                  <FiFileText className="w-4 h-4" />
+                  <FiFileText className="w-4 h-4 flex-shrink-0" />
                   <span>Documentation</span>
                 </a>
               </li>
               <li>
                 <a href="#" className="flex items-center space-x-2 text-gray-600 dark:text-zinc-400 hover:text-orange-500 dark:hover:text-orange-400 transition-colors">
-                  <FiBook className="w-4 h-4" />
+                  <FiBook className="w-4 h-4 flex-shrink-0" />
                   <span>Tutorials</span>
                 </a>
               </li>
               <li>
                 <a href="#" className="flex items-center space-x-2 text-gray-600 dark:text-zinc-400 hover:text-orange-500 dark:hover:text-orange-400 transition-colors">
-                  <FiCoffee className="w-4 h-4" />
+                  <FiCoffee className="w-4 h-4 flex-shrink-0" />
                   <span>Blog</span>
                 </a>
               </li>
               <li>
                 <a href="#" className="flex items-center space-x-2 text-gray-600 dark:text-zinc-400 hover:text-orange-500 dark:hover:text-orange-400 transition-colors">
-                  <FiHelpCircle className="w-4 h-4" />
+                  <FiHelpCircle className="w-4 h-4 flex-shrink-0" />
                   <span>Support</span>
                 </a>
               </li>
@@ -119,19 +119,19 @@ const Footer: React.FC = () => {
             <ul className="mt-4 space-y-2">
               <li>
                 <a href="#" className="flex items-center space-x-2 text-gray-600 dark:text-zinc-400 hover:text-orange-500 dark:hover:text-orange-400 transition-colors">
-                  <FiShield className="w-4 h-4" />
+                  <FiShield className="w-4 h-4 flex-shrink-0" />
                   <span>Privacy Policy</span>
                 </a>
               </li>
               <li>
                 <a href="#" className="flex items-center space-x-2 text-gray-600 dark:text-zinc-400 hover:text-orange-500 dark:hover:text-orange-400 transition-colors">
-                  <FiFileText className="w-4 h-4" />
+                  <FiFileText className="w-4 h-4 flex-shrink-0" />
                   <span>Terms of Service</span>
                 </a>
               </li>
               <li>
                 <a href="#" className="flex items-center space-x-2 text-gray-600 dark:text-zinc-400 hover:text-orange-500 dark:hover:text-orange-400 transition-colors">
-                  <FiFileText className="w-4 h-4" />
+                  <FiFileText className="w-4 h-4 flex-shrink-0" />
                   <span>Cookie Policy</span>
                 </a>
               </li>
@@ -139,7 +139,7 @@ const Footer: React.FC = () => {
           </div>
         </div>
 
-        <div className="mt-12 pt-8 border-t border-gray-200 dark:border-zinc-800">
+        <div className="mt-8 sm:mt-12 pt-6 sm:pt-8 border-t border-gray-200 dark:border-zinc-800">
           <p className="text-center text-gray-500 dark:text-zinc-500 text-sm">
             &copy; {year} SnapUI. All rights reserved.
           </p>

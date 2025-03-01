@@ -552,25 +552,70 @@ const ComponentList: React.FC<ComponentListProps> = ({ onDragStart }) => {
     },
   ];
 
+  // Add state for mobile sidebar
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
   return (
-    <div className="w-72 h-[90vh] bg-white dark:bg-zinc-800 border-r border-gray-200 dark:border-zinc-700 flex flex-col">
-      <div className="p-4 border-b border-gray-200 dark:border-zinc-700">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-zinc-100">Components</h2>
-      </div>
-      <div className="flex-1 overflow-auto p-4">
-        <div className="space-y-3">
-          {components.map((component) => {
-            const Icon = component.icon;
-            const currentLibrary = componentStyles[component.name]?.library || 'shadcn';
-            
-            return (
-              <div
-                key={component.name}
-                draggable
-                onDragStart={(e) => onDragStart(e, component.name, componentStyles[component.name], currentLibrary as UILibrary)}
-                className="group relative flex flex-col gap-2 p-3 rounded-md cursor-move hover:bg-gray-50 dark:hover:bg-zinc-700 border border-gray-200 dark:border-zinc-700 transition-colors dark:bg-zinc-800"
-              >
-                <div className="flex items-center justify-between">
+    <>
+      {/* Mobile toggle button - fixed to the side of the screen */}
+      <button 
+        className="md:hidden fixed left-0 top-1/2 transform -translate-y-1/2 bg-white dark:bg-zinc-800 p-2 rounded-r-lg shadow-md z-50 border border-gray-200 dark:border-zinc-700"
+        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" 
+          stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" 
+          className="text-gray-600 dark:text-zinc-400">
+          {isSidebarOpen ? 
+            <><path d="M18 6 6 18"/><path d="m6 6 12 12"/></> : 
+            <><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></>
+          }
+        </svg>
+      </button>
+
+      {/* Sidebar with responsive classes */}
+      <div className={`${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} transform transition-transform duration-300 ease-in-out fixed md:static left-0 top-0 z-40 md:z-0 w-80 md:w-72 h-screen bg-white dark:bg-zinc-800 border-r border-gray-200 dark:border-zinc-700 flex flex-col`}>
+        <div className="p-4 border-b border-gray-200 dark:border-zinc-700 flex justify-between items-center">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-zinc-100">Components</h2>
+          <button 
+            className="md:hidden text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-200"
+            onClick={() => setIsSidebarOpen(false)}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" 
+              stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+            </svg>
+          </button>
+        </div>
+        <div className="flex-1 overflow-auto p-4 thin-scrollbar">
+          <div className="space-y-4">
+            {components.map((component) => {
+              const Icon = component.icon;
+              const currentLibrary = componentStyles[component.name]?.library || 'shadcn';
+              
+              return (
+                <div
+                  key={component.name}
+                  draggable
+                  onDragStart={(e) => onDragStart(e, component.name, componentStyles[component.name], currentLibrary as UILibrary)}
+                  onClick={(e) => {
+                    // On mobile, add component on click, so we need to simulate the drag/drop
+                    if (window.innerWidth < 768) { // 768px is the md breakpoint
+                      // Create a custom event to tell DragDropEditor to add component
+                      const customEvent = new CustomEvent('addComponent', {
+                        detail: {
+                          componentType: component.name,
+                          styles: componentStyles[component.name],
+                          library: currentLibrary,
+                        },
+                        bubbles: true,
+                      });
+                      e.currentTarget.dispatchEvent(customEvent);
+                      // Auto-close sidebar on mobile after component selection
+                      setIsSidebarOpen(false);
+                    }
+                  }}
+                  className="group relative flex flex-col gap-2 p-3 rounded-md cursor-move hover:bg-gray-50 dark:hover:bg-zinc-700 border border-gray-200 dark:border-zinc-700 transition-colors dark:bg-zinc-800"
+                >
                   <div className="flex items-center gap-2">
                     <Icon className="w-5 h-5 text-gray-600 dark:text-zinc-400" />
                     <span className="text-sm font-medium text-gray-700 dark:text-zinc-300">{component.name}</span>
@@ -578,7 +623,10 @@ const ComponentList: React.FC<ComponentListProps> = ({ onDragStart }) => {
                   <div className="text-xs">
                     <select 
                       value={currentLibrary}
-                      onChange={(e) => handleLibraryChange(component.name, e.target.value as UILibrary)}
+                      onChange={(e) => {
+                        e.stopPropagation(); // Prevent click handling on parent
+                        handleLibraryChange(component.name, e.target.value as UILibrary);
+                      }}
                       className="text-xs border rounded px-1 py-0.5 bg-white dark:bg-zinc-700 dark:text-zinc-300 dark:border-zinc-600"
                     >
                       <option value="shadcn">shadcn</option>
@@ -586,23 +634,31 @@ const ComponentList: React.FC<ComponentListProps> = ({ onDragStart }) => {
                       <option value="antd">Ant Design</option>
                     </select>
                   </div>
+                  <div className="flex items-center justify-center bg-gray-50 dark:bg-zinc-700 rounded-md p-3 h-20 overflow-hidden">
+                    {renderPreview(component.name)}
+                  </div>
+                  <div className="relative" onClick={(e) => e.stopPropagation()}>
+                    <ComponentStyler
+                      componentType={component.name}
+                      onStyleChange={(styles) => handleStyleChange(component.name, styles)}
+                      initialStyles={componentStyles[component.name]}
+                    />
+                  </div>
                 </div>
-                <div className="flex items-center justify-center bg-gray-50 dark:bg-zinc-700 rounded-md p-3 h-20 overflow-hidden">
-                  {renderPreview(component.name)}
-                </div>
-                <div className="relative">
-                  <ComponentStyler
-                    componentType={component.name}
-                    onStyleChange={(styles) => handleStyleChange(component.name, styles)}
-                    initialStyles={componentStyles[component.name]}
-                  />
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </div>
-    </div>
+      
+      {/* Overlay for mobile when sidebar is open */}
+      {isSidebarOpen && (
+        <div 
+          className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-30"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+    </>
   );
 };
 
