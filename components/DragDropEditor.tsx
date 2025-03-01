@@ -1,6 +1,6 @@
 'use client'
 import React, { useState, useEffect, useRef } from "react";
-import { FiMove, FiTrash2, FiSave, FiEye, FiEdit2, FiDownload, FiList, FiCode, FiRotateCcw, FiRotateCw, FiCornerRightDown } from 'react-icons/fi';
+import { FiMove, FiTrash2, FiSave, FiEye, FiEdit2, FiDownload, FiList, FiCode, FiRotateCcw, FiRotateCw, FiCornerRightDown, FiChevronDown } from 'react-icons/fi';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Card } from './ui/card';
@@ -196,7 +196,7 @@ const DragDropEditor: React.FC = () => {
   // Use a stable ID generation method that doesn't rely on Math.random() during SSR
   const generateComponentId = (componentType: string) => {
     componentIdCounter += 1;
-    return `${componentType}-${componentIdCounter}`;
+    return `${componentType}-${componentIdCounter}-${Date.now()}`;
   };
 
   // Add function to update history
@@ -337,6 +337,70 @@ const DragDropEditor: React.FC = () => {
         height: "0",
         shadow: "none",
         opacity: 100,
+      },
+      Dropdown: {
+        backgroundColor: "#ffffff",
+        textColor: "#374151", // gray-700
+        borderColor: "#d1d5db", // gray-300
+        borderWidth: "1px",
+        borderStyle: "solid",
+        borderRadius: "0.375rem", // rounded-md
+        padding: "0.5rem 0.75rem",
+        fontSize: "0.875rem", // text-sm
+        width: "100%",
+        height: "auto",
+        shadow: "sm",
+        dropdownText: "Select option", // Default dropdown text
+      },
+      Badge: {
+        backgroundColor: "#f97316", // orange-500
+        textColor: "#ffffff",
+        borderColor: "transparent",
+        borderWidth: "1px",
+        borderStyle: "solid",
+        borderRadius: "9999px", // fully rounded
+        padding: "0.25rem 0.5rem",
+        fontSize: "0.75rem", // text-xs
+        fontWeight: "500", // font-medium
+        width: "auto",
+        height: "auto",
+        shadow: "none",
+        badgeText: "New", // Default badge text
+      },
+      Avatar: {
+        backgroundColor: "#f97316", // orange-500
+        textColor: "#ffffff",
+        borderColor: "transparent",
+        borderWidth: "2px",
+        borderStyle: "solid",
+        borderRadius: "9999px", // fully rounded
+        width: "40px",
+        height: "40px",
+        shadow: "none",
+        opacity: 100,
+        avatarText: "JD", // Default avatar text (initials)
+      },
+      Divider: {
+        backgroundColor: "transparent",
+        borderColor: "#e5e7eb", // gray-200
+        borderWidth: "1px",
+        borderTopWidth: "1px",
+        borderStyle: "solid",
+        width: "200px",
+        height: "0",
+        shadow: "none",
+        opacity: 100,
+      },
+      Text: {
+        backgroundColor: "transparent",
+        textColor: "#374151", // gray-700
+        fontSize: "0.875rem", // text-sm
+        fontWeight: "400", // font-normal
+        width: "auto",
+        height: "auto",
+        textAlign: "left",
+        letterSpacing: "normal",
+        textContent: "Text content", // Default text content
       }
     };
 
@@ -1148,9 +1212,207 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
                   width: styles.width || "100px",
                   height: "0",
                   borderTopWidth: styles.borderWidth || "2px",
+                  borderWidth: styles.borderWidth || "2px"
                 }}
                 className="dark:border-zinc-400"
               />
+              {isSelected && (
+                <div className="absolute top-full left-0 right-0 mt-2 z-10">
+                  <ComponentStyler
+                    componentType={type}
+                    onStyleChange={(styles) => handleStyleChange(id, styles)}
+                    initialStyles={component.styles}
+                  />
+                </div>
+              )}
+            </div>
+          );
+        case 'Dropdown':
+          return (
+            <div className={wrapperClasses}
+              onClick={(e) => !isPreviewMode && handleComponentClick(id, e)}
+              draggable={!isPreviewMode}
+              onDragStart={(e) => handleComponentDragStart(e, id)}>
+              {isSelected && !isPreviewMode && (
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-md z-50 bg-red-500 hover:bg-red-600 border-2 border-white"
+                  onClick={handleDelete}
+                >
+                  <FiTrash2 className="h-3 w-3 text-white" />
+                </Button>
+              )}
+              <div
+                style={{
+                  ...commonStyles,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  cursor: 'pointer',
+                }}
+                className="bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-md"
+              >
+                <span style={{ color: styles.textColor }}>
+                  {styles.dropdownText || 'Select option'}
+                </span>
+                <FiChevronDown style={{ color: styles.textColor }} />
+              </div>
+              {isSelected && (
+                <div className="absolute top-full left-0 right-0 mt-2 z-10">
+                  <ComponentStyler
+                    componentType={type}
+                    onStyleChange={(styles) => handleStyleChange(id, styles)}
+                    initialStyles={component.styles}
+                  />
+                </div>
+              )}
+            </div>
+          );
+        case 'Badge':
+          return (
+            <div className={wrapperClasses}
+              onClick={(e) => !isPreviewMode && handleComponentClick(id, e)}
+              draggable={!isPreviewMode}
+              onDragStart={(e) => handleComponentDragStart(e, id)}>
+              {isSelected && !isPreviewMode && (
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-md z-50 bg-red-500 hover:bg-red-600 border-2 border-white"
+                  onClick={handleDelete}
+                >
+                  <FiTrash2 className="h-3 w-3 text-white" />
+                </Button>
+              )}
+              <div
+                style={{
+                  ...commonStyles,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                className="inline-flex"
+              >
+                <span style={{ color: styles.textColor }}>
+                  {styles.badgeText || 'New'}
+                </span>
+              </div>
+              {isSelected && (
+                <div className="absolute top-full left-0 right-0 mt-2 z-10">
+                  <ComponentStyler
+                    componentType={type}
+                    onStyleChange={(styles) => handleStyleChange(id, styles)}
+                    initialStyles={component.styles}
+                  />
+                </div>
+              )}
+            </div>
+          );
+        case 'Avatar':
+          return (
+            <div className={wrapperClasses}
+              onClick={(e) => !isPreviewMode && handleComponentClick(id, e)}
+              draggable={!isPreviewMode}
+              onDragStart={(e) => handleComponentDragStart(e, id)}>
+              {isSelected && !isPreviewMode && (
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-md z-50 bg-red-500 hover:bg-red-600 border-2 border-white"
+                  onClick={handleDelete}
+                >
+                  <FiTrash2 className="h-3 w-3 text-white" />
+                </Button>
+              )}
+              <div
+                style={{
+                  ...commonStyles,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                className="flex items-center justify-center"
+              >
+                <span style={{ color: styles.textColor }}>
+                  {styles.avatarText || 'JD'}
+                </span>
+              </div>
+              {isSelected && (
+                <div className="absolute top-full left-0 right-0 mt-2 z-10">
+                  <ComponentStyler
+                    componentType={type}
+                    onStyleChange={(styles) => handleStyleChange(id, styles)}
+                    initialStyles={component.styles}
+                  />
+                </div>
+              )}
+            </div>
+          );
+        case 'Divider':
+          return (
+            <div className={wrapperClasses}
+              onClick={(e) => !isPreviewMode && handleComponentClick(id, e)}
+              draggable={!isPreviewMode}
+              onDragStart={(e) => handleComponentDragStart(e, id)}>
+              {isSelected && !isPreviewMode && (
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-md z-50 bg-red-500 hover:bg-red-600 border-2 border-white"
+                  onClick={handleDelete}
+                >
+                  <FiTrash2 className="h-3 w-3 text-white" />
+                </Button>
+              )}
+              <div
+                style={{
+                  ...commonStyles,
+                  width: styles.width || "200px",
+                  height: '0',
+                  borderTopWidth: styles.borderTopWidth || '1px',
+                  borderWidth: styles.borderWidth || '1px'
+                }}
+                className="dark:border-zinc-600"
+              />
+              {isSelected && (
+                <div className="absolute top-full left-0 right-0 mt-2 z-10">
+                  <ComponentStyler
+                    componentType={type}
+                    onStyleChange={(styles) => handleStyleChange(id, styles)}
+                    initialStyles={component.styles}
+                  />
+                </div>
+              )}
+            </div>
+          );
+        case 'Text':
+          return (
+            <div className={wrapperClasses}
+              onClick={(e) => !isPreviewMode && handleComponentClick(id, e)}
+              draggable={!isPreviewMode}
+              onDragStart={(e) => handleComponentDragStart(e, id)}>
+              {isSelected && !isPreviewMode && (
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-md z-50 bg-red-500 hover:bg-red-600 border-2 border-white"
+                  onClick={handleDelete}
+                >
+                  <FiTrash2 className="h-3 w-3 text-white" />
+                </Button>
+              )}
+              <div
+                style={{
+                  ...commonStyles,
+                  textAlign: styles.textAlign as any || 'left',
+                }}
+                className="dark:text-zinc-200"
+              >
+                <span style={{ color: styles.textColor }}>
+                  {styles.textContent || 'Text content'}
+                </span>
+              </div>
               {isSelected && (
                 <div className="absolute top-full left-0 right-0 mt-2 z-10">
                   <ComponentStyler

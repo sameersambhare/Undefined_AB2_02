@@ -26,8 +26,50 @@ interface ComponentStylerProps {
   initialStyles?: any;
 }
 
+// Define a more comprehensive styles interface
+interface StylesState {
+  // Layout
+  width: string;
+  height: string;
+  padding: string;
+  margin: string;
+  
+  // Typography
+  fontSize: string;
+  fontWeight: string;
+  textAlign: string;
+  letterSpacing: string;
+  
+  // Colors
+  backgroundColor: string;
+  textColor: string;
+  
+  // Border
+  borderColor: string;
+  borderWidth: string;
+  borderStyle: string;
+  borderRadius: string;
+  borderTopWidth?: string;
+  
+  // Component-specific
+  variant: string;
+  size: string;
+  placeholder: string;
+  buttonText: string;
+  cardTitle: string;
+  cardContent: string;
+  dropdownText: string;
+  badgeText: string;
+  avatarText: string;
+  textContent: string;
+  
+  // Effects
+  opacity: string;
+  shadow: string;
+}
+
 const ComponentStyler: React.FC<ComponentStylerProps> = ({ componentType, onStyleChange, initialStyles = {} }) => {
-  const [styles, setStyles] = useState({
+  const [styles, setStyles] = useState<StylesState>({
     // Layout
     width: initialStyles.width || '',
     height: initialStyles.height || '',
@@ -49,6 +91,7 @@ const ComponentStyler: React.FC<ComponentStylerProps> = ({ componentType, onStyl
     borderWidth: initialStyles.borderWidth || '1px',
     borderStyle: initialStyles.borderStyle || 'solid',
     borderRadius: initialStyles.borderRadius || '0.375rem',
+    borderTopWidth: initialStyles.borderTopWidth || '1px',
     
     // Component-specific
     variant: initialStyles.variant || 'default',
@@ -57,6 +100,10 @@ const ComponentStyler: React.FC<ComponentStylerProps> = ({ componentType, onStyl
     buttonText: initialStyles.buttonText || 'Button',
     cardTitle: initialStyles.cardTitle || 'Card Title',
     cardContent: initialStyles.cardContent || 'Card content goes here',
+    dropdownText: initialStyles.dropdownText || 'Select option',
+    badgeText: initialStyles.badgeText || 'New',
+    avatarText: initialStyles.avatarText || 'JD',
+    textContent: initialStyles.textContent || 'Text content',
     
     // Effects
     opacity: initialStyles.opacity || '100',
@@ -110,6 +157,11 @@ const ComponentStyler: React.FC<ComponentStylerProps> = ({ componentType, onStyl
         opacity: "100",
         cardTitle: "",
         cardContent: "",
+        dropdownText: "",
+        badgeText: "",
+        avatarText: "",
+        textContent: "",
+        borderTopWidth: "",
       },
       Input: {
         placeholder: "Input field",
@@ -134,6 +186,11 @@ const ComponentStyler: React.FC<ComponentStylerProps> = ({ componentType, onStyl
         buttonText: "",
         cardTitle: "",
         cardContent: "",
+        dropdownText: "",
+        badgeText: "",
+        avatarText: "",
+        textContent: "",
+        borderTopWidth: "",
       },
       Card: {
         backgroundColor: "#ffffff",
@@ -158,11 +215,244 @@ const ComponentStyler: React.FC<ComponentStylerProps> = ({ componentType, onStyl
         opacity: "100",
         placeholder: "",
         buttonText: "",
+        dropdownText: "",
+        badgeText: "",
+        avatarText: "",
+        textContent: "",
+        borderTopWidth: "",
+      },
+      Rectangle: {
+        backgroundColor: "#f97316",
+        borderColor: "#f97316",
+        borderWidth: "2px",
+        borderStyle: "solid",
+        borderRadius: "0.375rem",
+        width: "100px",
+        height: "60px",
+        shadow: "sm",
+        opacity: "100",
+        variant: "default",
+        size: "default",
+        margin: "",
+        padding: "",
+        fontSize: "0.875rem",
+        fontWeight: "normal",
+        textAlign: "left",
+        letterSpacing: "normal",
+        placeholder: "",
+        buttonText: "",
+        cardTitle: "",
+        cardContent: "",
+        dropdownText: "",
+        badgeText: "",
+        avatarText: "",
+        textContent: "",
+        borderTopWidth: "",
+      },
+      Circle: {
+        backgroundColor: "#f97316",
+        borderColor: "#f97316",
+        borderWidth: "2px",
+        borderStyle: "solid",
+        borderRadius: "9999px",
+        width: "80px",
+        height: "80px",
+        shadow: "sm",
+        opacity: "100",
+        variant: "default",
+        size: "default",
+        margin: "",
+        padding: "",
+        fontSize: "0.875rem",
+        fontWeight: "normal",
+        textAlign: "left",
+        letterSpacing: "normal",
+        placeholder: "",
+        buttonText: "",
+        cardTitle: "",
+        cardContent: "",
+        dropdownText: "",
+        badgeText: "",
+        avatarText: "",
+        textContent: "",
+        borderTopWidth: "",
+      },
+      Line: {
+        backgroundColor: "transparent",
+        borderColor: "#f97316",
+        borderWidth: "0",
+        borderTopWidth: "2px",
+        borderStyle: "solid",
+        width: "100px",
+        height: "0",
+        shadow: "none",
+        opacity: "100",
+        variant: "default",
+        size: "default",
+        margin: "",
+        padding: "",
+        fontSize: "0.875rem",
+        fontWeight: "normal",
+        textAlign: "left",
+        letterSpacing: "normal",
+        borderRadius: "0",
+        placeholder: "",
+        buttonText: "",
+        cardTitle: "",
+        cardContent: "",
+        dropdownText: "",
+        badgeText: "",
+        avatarText: "",
+        textContent: "",
+      },
+      Dropdown: {
+        backgroundColor: "#ffffff",
+        textColor: "#374151",
+        borderColor: "#d1d5db",
+        borderWidth: "1px",
+        borderStyle: "solid",
+        borderRadius: "0.375rem",
+        padding: "0.5rem 0.75rem",
+        fontSize: "0.875rem",
+        width: "100%",
+        height: "auto",
+        shadow: "sm",
+        dropdownText: "Select option",
+        variant: "default",
+        size: "default",
+        margin: "",
+        fontWeight: "normal",
+        textAlign: "left",
+        letterSpacing: "normal",
+        opacity: "100",
+        placeholder: "",
+        buttonText: "",
+        cardTitle: "",
+        cardContent: "",
+        badgeText: "",
+        avatarText: "",
+        textContent: "",
+        borderTopWidth: "",
+      },
+      Badge: {
+        backgroundColor: "#f97316",
+        textColor: "#ffffff",
+        borderColor: "transparent",
+        borderWidth: "1px",
+        borderStyle: "solid",
+        borderRadius: "9999px",
+        padding: "0.25rem 0.5rem",
+        fontSize: "0.75rem",
+        fontWeight: "500",
+        width: "auto",
+        height: "auto",
+        shadow: "none",
+        badgeText: "New",
+        variant: "default",
+        size: "default",
+        margin: "",
+        textAlign: "center",
+        letterSpacing: "normal",
+        opacity: "100",
+        placeholder: "",
+        buttonText: "",
+        cardTitle: "",
+        cardContent: "",
+        dropdownText: "",
+        avatarText: "",
+        textContent: "",
+        borderTopWidth: "",
+      },
+      Avatar: {
+        backgroundColor: "#f97316",
+        textColor: "#ffffff",
+        borderColor: "transparent",
+        borderWidth: "2px",
+        borderStyle: "solid",
+        borderRadius: "9999px",
+        width: "40px",
+        height: "40px",
+        shadow: "none",
+        opacity: "100",
+        avatarText: "JD",
+        variant: "default",
+        size: "default",
+        margin: "",
+        padding: "",
+        fontSize: "0.875rem",
+        fontWeight: "500",
+        textAlign: "center",
+        letterSpacing: "normal",
+        placeholder: "",
+        buttonText: "",
+        cardTitle: "",
+        cardContent: "",
+        dropdownText: "",
+        badgeText: "",
+        textContent: "",
+        borderTopWidth: "",
+      },
+      Divider: {
+        backgroundColor: "transparent",
+        borderColor: "#e5e7eb",
+        borderWidth: "0",
+        borderTopWidth: "1px",
+        borderStyle: "solid",
+        width: "100%",
+        height: "0",
+        shadow: "none",
+        opacity: "100",
+        variant: "default",
+        size: "default",
+        margin: "",
+        padding: "",
+        fontSize: "0.875rem",
+        fontWeight: "normal",
+        textAlign: "left",
+        letterSpacing: "normal",
+        borderRadius: "0",
+        placeholder: "",
+        buttonText: "",
+        cardTitle: "",
+        cardContent: "",
+        dropdownText: "",
+        badgeText: "",
+        avatarText: "",
+        textContent: "",
+      },
+      Text: {
+        backgroundColor: "transparent",
+        textColor: "#374151",
+        fontSize: "0.875rem",
+        fontWeight: "400",
+        width: "auto",
+        height: "auto",
+        textAlign: "left",
+        letterSpacing: "normal",
+        textContent: "Text content",
+        variant: "default",
+        size: "default",
+        margin: "",
+        padding: "",
+        borderColor: "transparent",
+        borderWidth: "0",
+        borderStyle: "none",
+        borderRadius: "0",
+        shadow: "none",
+        opacity: "100",
+        placeholder: "",
+        buttonText: "",
+        cardTitle: "",
+        cardContent: "",
+        dropdownText: "",
+        badgeText: "",
+        avatarText: "",
+        borderTopWidth: "",
       }
     };
     
     const defaultStyles = defaultComponentStyles[componentType as keyof typeof defaultComponentStyles] || {};
-    setStyles(defaultStyles);
+    setStyles(defaultStyles as StylesState);
     onStyleChange(defaultStyles);
   };
 
@@ -386,6 +676,113 @@ const ComponentStyler: React.FC<ComponentStylerProps> = ({ componentType, onStyl
             step: '1',
             onChange: (value) => handleStyleChange('borderWidth', `${value}px`),
             description: 'Line thickness (px)'
+          },
+        ];
+      case 'Dropdown':
+        return [
+          {
+            label: 'Dropdown Text',
+            type: 'input',
+            value: styles.dropdownText !== undefined ? styles.dropdownText : 'Select option',
+            onChange: (value) => handleStyleChange('dropdownText', value),
+            description: 'Text displayed in dropdown'
+          },
+          {
+            label: 'Width',
+            type: 'input',
+            value: styles.width || '100%',
+            onChange: (value) => handleStyleChange('width', value),
+            description: 'Dropdown width (px, %, rem)'
+          },
+        ];
+      case 'Badge':
+        return [
+          {
+            label: 'Badge Text',
+            type: 'input',
+            value: styles.badgeText !== undefined ? styles.badgeText : 'New',
+            onChange: (value) => handleStyleChange('badgeText', value),
+            description: 'Text displayed in badge'
+          },
+          {
+            label: 'Padding',
+            type: 'input',
+            value: styles.padding || '0.25rem 0.5rem',
+            onChange: (value) => handleStyleChange('padding', value),
+            description: 'Badge padding (px, rem)'
+          },
+        ];
+      case 'Avatar':
+        return [
+          {
+            label: 'Initials',
+            type: 'input',
+            value: styles.avatarText !== undefined ? styles.avatarText : 'JD',
+            onChange: (value) => handleStyleChange('avatarText', value),
+            description: 'Text displayed in avatar (usually initials)'
+          },
+          {
+            label: 'Size',
+            type: 'input',
+            value: styles.width || '40px',
+            onChange: (value) => {
+              handleStyleChange('width', value);
+              handleStyleChange('height', value);
+            },
+            description: 'Avatar size (px, rem)'
+          },
+        ];
+      case 'Divider':
+        return [
+          {
+            label: 'Width',
+            type: 'input',
+            value: styles.width || '100%',
+            onChange: (value) => handleStyleChange('width', value),
+            description: 'Divider width (px, %, rem)'
+          },
+          {
+            label: 'Thickness',
+            type: 'range',
+            value: (styles.borderTopWidth || '1').replace('px', ''),
+            min: '1',
+            max: '10',
+            step: '1',
+            onChange: (value) => handleStyleChange('borderTopWidth', `${value}px`),
+            description: 'Divider thickness (px)'
+          },
+        ];
+      case 'Text':
+        return [
+          {
+            label: 'Content',
+            type: 'input',
+            value: styles.textContent !== undefined ? styles.textContent : 'Text content',
+            onChange: (value) => handleStyleChange('textContent', value),
+            description: 'Text content to display'
+          },
+          {
+            label: 'Font Size',
+            type: 'input',
+            value: styles.fontSize || '0.875rem',
+            onChange: (value) => handleStyleChange('fontSize', value),
+            description: 'Text size (px, rem, em)'
+          },
+          {
+            label: 'Font Weight',
+            type: 'select',
+            options: ['normal', 'medium', 'semibold', 'bold'],
+            value: styles.fontWeight || 'normal',
+            onChange: (value) => handleStyleChange('fontWeight', value),
+            description: 'Text thickness'
+          },
+          {
+            label: 'Text Align',
+            type: 'select',
+            options: ['left', 'center', 'right'],
+            value: styles.textAlign || 'left',
+            onChange: (value) => handleStyleChange('textAlign', value),
+            description: 'Text alignment'
           },
         ];
       default:
