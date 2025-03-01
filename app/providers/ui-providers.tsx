@@ -4,6 +4,7 @@ import React from 'react';
 import { ThemeProvider } from 'next-themes';
 import MuiProvider from './mui-provider';
 import AntdProvider from './antd-provider';
+import { AuthProvider } from './AuthProvider';
 
 // Main UI providers wrapper component
 const UIProviders = ({ children }: { children: React.ReactNode }) => {
@@ -14,11 +15,13 @@ const UIProviders = ({ children }: { children: React.ReactNode }) => {
       enableSystem
       themes={['light', 'dark']}
     >
-      <MuiProvider>
-        <AntdProvider>
-          {children}
-        </AntdProvider>
-      </MuiProvider>
+      <AuthProvider>
+        <MuiProvider>
+          <AntdProvider>
+            {children}
+          </AntdProvider>
+        </MuiProvider>
+      </AuthProvider>
     </ThemeProvider>
   );
 };
