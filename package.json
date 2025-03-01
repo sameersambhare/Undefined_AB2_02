@@ -12,6 +12,7 @@
     "@chakra-ui/react": "^3.8.1",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
+    "@mui/icons-material": "^6.4.6",
     "@mui/material": "^6.4.6",
     "@prisma/client": "^6.4.1",
     "@radix-ui/react-accordion": "^1.2.3",

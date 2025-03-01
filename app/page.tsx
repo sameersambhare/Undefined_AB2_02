@@ -32,8 +32,7 @@ const Home = () => {
     <div className="min-h-screen bg-white dark:bg-zinc-950">
       <Navbar />
 
-      <main>
-        {/* Hero Section */}
+      <main className="page-content">
         <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-gray-50 dark:from-zinc-950 dark:to-zinc-900">
           <div className="max-w-7xl mx-auto">
             <div className="text-center">
@@ -61,7 +60,6 @@ const Home = () => {
           </div>
         </section>
 
-        {/* Features Section */}
         <section id="features" className="py-20 bg-white dark:bg-zinc-900">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
@@ -92,7 +90,6 @@ const Home = () => {
           </div>
         </section>
 
-        {/* Benefits Section */}
         <section className="py-20 bg-gray-50 dark:bg-gradient-to-b dark:from-zinc-900 dark:to-zinc-950">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
@@ -122,7 +119,6 @@ const Home = () => {
             </div>
           </div>
         </section>
-        {/* CTA Section */}
         <section className="py-20 bg-gradient-to-r from-orange-600 to-orange-500 dark:from-orange-700 dark:to-orange-600">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 className="text-3xl font-bold text-white mb-6">

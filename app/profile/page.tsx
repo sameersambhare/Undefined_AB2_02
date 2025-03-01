@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/providers/AuthProvider';
 import { 
@@ -13,15 +13,31 @@ import {
   CircularProgress,
   Container,
   Paper,
-  Grid
+  Grid,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemAvatar,
+  ListItemButton
 } from '@mui/material';
+import { DesignServices, AccessTime } from '@mui/icons-material';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ToastExample from '@/components/ToastExample';
 
+interface SavedLayout {
+  _id?: string;
+  name: string;
+  components: any[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export default function Profile() {
   const { user, logout, isLoading } = useAuth();
   const router = useRouter();
+  const [layouts, setLayouts] = useState<SavedLayout[]>([]);
+  const [isLoadingLayouts, setIsLoadingLayouts] = useState(false);
 
   // If no user is logged in, this page should be protected by middleware
   // But we'll add an extra check just in case
@@ -31,9 +47,57 @@ export default function Profile() {
     }
   }, [user, isLoading, router]);
 
+  // Fetch user's layouts when component mounts
+  useEffect(() => {
+    if (user) {
+      fetchUserLayouts();
+    }
+  }, [user]);
+
+  // Function to fetch user's layouts
+  const fetchUserLayouts = async () => {
+    try {
+      setIsLoadingLayouts(true);
+      
+      // Get auth token from cookies
+      const authToken = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('auth_token='))
+        ?.split('=')[1];
+      
+      if (!authToken) {
+        console.error('Authentication token not found');
+        return;
+      }
+      
+      const response = await fetch('/api/layouts', {
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        setLayouts(data.layouts);
+      } else {
+        console.error('Failed to fetch layouts:', data.error);
+      }
+    } catch (error) {
+      console.error('Error fetching layouts:', error);
+    } finally {
+      setIsLoadingLayouts(false);
+    }
+  };
+
   const handleLogout = () => {
     logout();
     router.push('/');
+  };
+
+  // Navigate to the editor with the selected layout
+  const handleEditLayout = (layoutId: string) => {
+    router.push(`/createui?layout=${layoutId}`);
   };
 
   if (isLoading) {
@@ -55,11 +119,18 @@ export default function Profile() {
       .substring(0, 2);
   };
 
+  // Format date for display
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString() + ' at ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Navbar />
       
-      <Container maxWidth="md" sx={{ flex: 1, py: 4 }}>
+      <Container maxWidth="md" sx={{ flex: 1, py: 4, mt: '64px' }} className="page-content">
         <Typography variant="h4" component="h1" gutterBottom sx={{ mb: 4 }}>
           My Profile
         </Typography>
@@ -138,12 +209,66 @@ export default function Profile() {
               <Divider sx={{ my: 2 }} />
               
               <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
-                Recent Activity
+                Recent UI Layouts
               </Typography>
               
-              <Typography variant="body2" color="text.secondary">
-                No recent activity to display.
-              </Typography>
+              {isLoadingLayouts ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                  <CircularProgress size={24} />
+                </Box>
+              ) : layouts.length > 0 ? (
+                <List sx={{ width: '100%' }}>
+                  {layouts.slice().reverse().map((layout) => (
+                    <ListItem 
+                      key={layout._id} 
+                      disablePadding
+                      secondaryAction={
+                        <Button 
+                          size="small" 
+                          variant="outlined" 
+                          onClick={() => layout._id && handleEditLayout(layout._id)}
+                        >
+                          Edit
+                        </Button>
+                      }
+                    >
+                      <ListItemButton onClick={() => layout._id && handleEditLayout(layout._id)}>
+                        <ListItemAvatar>
+                          <Avatar sx={{ bgcolor: 'primary.main' }}>
+                            <DesignServices />
+                          </Avatar>
+                        </ListItemAvatar>
+                        <ListItemText 
+                          primary={layout.name} 
+                          secondary={
+                            <React.Fragment>
+                              <AccessTime sx={{ fontSize: '0.8rem', mr: 0.5, verticalAlign: 'middle' }} />
+                              {formatDate(layout.createdAt)}
+                              <Typography component="span" variant="body2" sx={{ display: 'block' }}>
+                                {layout.components.length} components
+                              </Typography>
+                            </React.Fragment>
+                          } 
+                        />
+                      </ListItemButton>
+                    </ListItem>
+                  ))}
+                </List>
+              ) : (
+                <Box sx={{ py: 2 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    You haven't created any UI layouts yet.
+                  </Typography>
+                  <Button 
+                    variant="contained" 
+                    color="primary" 
+                    sx={{ mt: 2 }}
+                    onClick={() => router.push('/createui')}
+                  >
+                    Create Your First Layout
+                  </Button>
+                </Box>
+              )}
             </Paper>
           </Grid>
         </Grid>
