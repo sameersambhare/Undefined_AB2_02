@@ -160,24 +160,26 @@ const DragDropEditor: React.FC = () => {
     const componentLibrary = e.dataTransfer.getData('componentLibrary') || 'shadcn';
 
     // Default styles based on component type if no styles are provided
+    const defaultButtonStyles = {
+      variant: "default",
+      size: "default",
+      backgroundColor: "#f97316", // orange-500
+      textColor: "#ffffff",
+      borderColor: "transparent",
+      borderWidth: "1px",
+      borderStyle: "solid",
+      borderRadius: "0.375rem", // rounded-md
+      padding: "0.5rem 1rem",
+      fontSize: "0.875rem", // text-sm
+      fontWeight: "500", // font-medium
+      width: "auto",
+      height: "auto",
+      shadow: "sm",
+      buttonText: "Button", // Default button text
+    };
+
     const defaultStyles = {
-      Button: {
-        variant: "default",
-        size: "default",
-        backgroundColor: "#3b82f6", // blue-500
-        textColor: "#ffffff",
-        borderColor: "transparent",
-        borderWidth: "1px",
-        borderStyle: "solid",
-        borderRadius: "0.375rem", // rounded-md
-        padding: "0.5rem 1rem",
-        fontSize: "0.875rem", // text-sm
-        fontWeight: "500", // font-medium
-        width: "auto",
-        height: "auto",
-        shadow: "sm",
-        buttonText: "Button", // Add default button text
-      },
+      Button: defaultButtonStyles,
       Input: {
         placeholder: "Input field",
         backgroundColor: "#ffffff",
@@ -693,7 +695,7 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
                  styles?.shadow === 'xl' ? '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)' : 'none',
     };
 
-    const wrapperClasses = `relative group ${isPreviewMode ? '' : 'cursor-move'} ${isSelected ? 'ring-2 ring-blue-500 ring-offset-2' : ''}`;
+    const wrapperClasses = `relative group ${isPreviewMode ? '' : 'cursor-move'} ${isSelected ? 'ring-2 ring-orange-500 ring-offset-2' : ''}`;
 
     const handleDelete = (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -842,10 +844,9 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
                   <FiTrash2 className="h-3 w-3 text-white" />
                 </Button>
               )}
-              <MuiInput
-                // @ts-ignore - Ignoring type error for demo purposes
-                label="MUI Input"
-                variant="outlined"
+              <Input
+                placeholder={styles.placeholder || "Input field"}
+                className="dark:text-zinc-200 dark:placeholder:text-zinc-400 dark:bg-zinc-800 dark:border-zinc-700"
                 style={{
                   ...commonStyles,
                   fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
@@ -880,25 +881,19 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
                   <FiTrash2 className="h-3 w-3 text-white" />
                 </Button>
               )}
-              <MuiCard 
-                // @ts-ignore - Ignoring type error for demo purposes
-                style={{
+              <Card className="dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-200">
+                <div style={{ 
                   ...commonStyles,
-                  fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-                  borderRadius: '4px',
-                  boxShadow: '0px 2px 1px -1px rgba(0,0,0,0.2), 0px 1px 1px 0px rgba(0,0,0,0.14), 0px 1px 3px 0px rgba(0,0,0,0.12)',
                   padding: '16px',
-                }}
-              >
-                <div style={{ padding: '16px' }}>
-                  <h3 style={{ color: styles?.textColor, fontWeight: 500, marginBottom: '8px', fontSize: '1.1em' }}>
-                    {styles.cardTitle || 'MUI Card'}
+                }}>
+                  <h3 className="text-gray-900 dark:text-zinc-100 font-medium mb-2 text-lg">
+                    {styles.cardTitle || 'Card Title'}
                   </h3>
-                  <p style={{ color: styles?.textColor, fontSize: '0.875rem' }}>
-                    {styles.cardContent === undefined || styles.cardContent === null ? 'This is a Material UI card with elevation and padding.' : styles.cardContent}
+                  <p className="text-gray-700 dark:text-zinc-300 text-sm">
+                    {styles.cardContent === undefined || styles.cardContent === null ? 'Card content goes here' : styles.cardContent}
                   </p>
                 </div>
-              </MuiCard>
+              </Card>
               {isSelected && (
                 <div className="absolute top-full left-0 right-0 mt-2 z-10">
                   <ComponentStyler
@@ -921,17 +916,17 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
   return (
     <div className="flex-1 flex flex-col">
       <div className="flex justify-between items-center mb-4 px-4">
-        <h2 className="text-lg font-semibold text-gray-900">Editor Canvas</h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-zinc-100">Editor Canvas</h2>
       </div>
       <div
         ref={setCanvasRef}
-        className={`flex-1 min-h-[600px] bg-white rounded-t-lg shadow-sm border-2 ${
-          isDraggingOver && !isPreviewMode ? 'border-indigo-500 border-dashed' : 'border-gray-200'
+        className={`flex-1 min-h-[600px] bg-white dark:bg-zinc-800 rounded-t-lg shadow-sm border-2 ${
+          isDraggingOver && !isPreviewMode ? 'border-orange-500 border-dashed' : 'border-gray-200 dark:border-zinc-700'
         } relative overflow-hidden`}
-        onDragOver={!isPreviewMode ? handleDragOver : undefined}
-        onDragLeave={!isPreviewMode ? handleDragLeave : undefined}
-        onDrop={!isPreviewMode ? handleDrop : undefined}
-        onClick={!isPreviewMode ? handleCanvasClick : undefined}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        onClick={handleCanvasClick}
       >
         {components.length === 0 && !isPreviewMode && (
           <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400">
@@ -943,10 +938,12 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
         {components.map((component) => (
           <div
             key={component.id}
-            className="absolute"
+            className={`absolute ${isPreviewMode ? '' : 'cursor-move'} ${
+              selectedComponent === component.id && !isPreviewMode ? 'ring-2 ring-orange-500 dark:ring-orange-400' : ''
+            }`}
             style={{
-              left: component.position.x,
-              top: component.position.y,
+              left: `${component.position.x}px`,
+              top: `${component.position.y}px`,
               transform: 'translate(-50%, -50%)',
             }}
           >
@@ -956,7 +953,7 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
       </div>
 
       {/* Footer with actions */}
-      <div className="flex justify-between items-center px-4 py-3 bg-gray-50 border-x-2 border-b-2 border-gray-200 rounded-b-lg">
+      <div className="flex justify-between items-center px-4 py-3 bg-gray-50 dark:bg-zinc-800 border-x-2 border-b-2 border-gray-200 dark:border-zinc-700 rounded-b-lg">
         <div className="flex gap-2">
           <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -970,10 +967,10 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
                 Reset Canvas
               </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent className="bg-white/80 backdrop-blur-md border border-gray-200">
+            <AlertDialogContent className="bg-white/80 dark:bg-zinc-800/80 backdrop-blur-md border border-gray-200 dark:border-zinc-700">
               <AlertDialogHeader>
                 <AlertDialogTitle>Reset Canvas</AlertDialogTitle>
-                <AlertDialogDescription>
+                <AlertDialogDescription className="dark:text-zinc-300">
                   Are you sure you want to reset the canvas? This will remove all components and cannot be undone.
                 </AlertDialogDescription>
               </AlertDialogHeader>
@@ -1045,10 +1042,10 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
                 Load Layout
               </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent className="bg-white/80 backdrop-blur-md border border-gray-200">
+            <AlertDialogContent className="bg-white/80 dark:bg-zinc-800/80 backdrop-blur-md border border-gray-200 dark:border-zinc-700">
               <AlertDialogHeader>
                 <AlertDialogTitle>Load Layout</AlertDialogTitle>
-                <AlertDialogDescription>
+                <AlertDialogDescription className="dark:text-zinc-300">
                   Select a saved layout to load. This will replace your current canvas.
                 </AlertDialogDescription>
               </AlertDialogHeader>
@@ -1088,10 +1085,10 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
                 Export
               </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent className="bg-white/80 backdrop-blur-md border border-gray-200">
+            <AlertDialogContent className="bg-white/80 dark:bg-zinc-800/80 backdrop-blur-md border border-gray-200 dark:border-zinc-700">
               <AlertDialogHeader>
                 <AlertDialogTitle>Export Layout</AlertDialogTitle>
-                <AlertDialogDescription>
+                <AlertDialogDescription className="dark:text-zinc-300">
                   Choose a format to export your layout.
                 </AlertDialogDescription>
               </AlertDialogHeader>
@@ -1145,10 +1142,10 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
                 Save Layout
               </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent className="bg-white/80 backdrop-blur-md border border-gray-200">
+            <AlertDialogContent className="bg-white/80 dark:bg-zinc-800/80 backdrop-blur-md border border-gray-200 dark:border-zinc-700">
               <AlertDialogHeader>
                 <AlertDialogTitle>Save Layout</AlertDialogTitle>
-                <AlertDialogDescription>
+                <AlertDialogDescription className="dark:text-zinc-300">
                   Give your layout a name to save it. You can load it later.
                 </AlertDialogDescription>
               </AlertDialogHeader>

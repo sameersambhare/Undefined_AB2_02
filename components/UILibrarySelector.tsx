@@ -29,7 +29,7 @@ const UILibrarySelector: React.FC<UILibrarySelectorProps> = ({ onSelect, selecte
 
   const renderCardPreview = () => {
     // Don't render anything during SSR
-    if (!isMounted) return <div className="h-24 bg-gray-100 animate-pulse rounded"></div>;
+    if (!isMounted) return <div className="h-24 bg-gray-100 dark:bg-zinc-800 animate-pulse rounded"></div>;
 
     switch (selectedLibrary) {
       case 'mui':
@@ -50,7 +50,7 @@ const UILibrarySelector: React.FC<UILibrarySelectorProps> = ({ onSelect, selecte
         return (
           <Card className="p-4">
             <h3 className="text-lg font-medium mb-2">Shadcn Card</h3>
-            <p className="text-sm text-gray-600">This is a card component from Shadcn UI.</p>
+            <p className="text-sm text-gray-600 dark:text-zinc-400">This is a card component from Shadcn UI.</p>
           </Card>
         );
     }
@@ -58,7 +58,7 @@ const UILibrarySelector: React.FC<UILibrarySelectorProps> = ({ onSelect, selecte
 
   const renderButtonPreview = () => {
     // Don't render anything during SSR
-    if (!isMounted) return <div className="h-10 w-32 bg-gray-100 animate-pulse rounded"></div>;
+    if (!isMounted) return <div className="h-10 w-32 bg-gray-100 dark:bg-zinc-800 animate-pulse rounded"></div>;
 
     switch (selectedLibrary) {
       case 'mui':
@@ -85,7 +85,7 @@ const UILibrarySelector: React.FC<UILibrarySelectorProps> = ({ onSelect, selecte
 
   const renderInputPreview = () => {
     // Don't render anything during SSR
-    if (!isMounted) return <div className="h-10 w-full bg-gray-100 animate-pulse rounded"></div>;
+    if (!isMounted) return <div className="h-10 w-full bg-gray-100 dark:bg-zinc-800 animate-pulse rounded"></div>;
 
     switch (selectedLibrary) {
       case 'mui':
@@ -114,24 +114,30 @@ const UILibrarySelector: React.FC<UILibrarySelectorProps> = ({ onSelect, selecte
   };
 
   return (
-    <div className="p-4 border rounded-lg bg-white shadow-sm">
-      <h2 className="text-xl font-semibold mb-4">Select UI Library</h2>
+    <div className="p-4 border rounded-lg bg-white dark:bg-zinc-800 dark:border-zinc-700 shadow-sm">
+      <h2 className="text-xl font-semibold mb-4 dark:text-zinc-100">Select UI Library</h2>
       
       <div className="flex flex-wrap gap-2 mb-6">
         <button
-          className={`px-4 py-2 rounded ${selectedLibrary === 'shadcn' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+          className={`px-4 py-2 rounded ${selectedLibrary === 'shadcn' 
+            ? 'bg-blue-500 text-white' 
+            : 'bg-gray-200 dark:bg-zinc-700 dark:text-zinc-200'}`}
           onClick={() => onSelect('shadcn')}
         >
           Shadcn UI
         </button>
         <button
-          className={`px-4 py-2 rounded ${selectedLibrary === 'mui' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+          className={`px-4 py-2 rounded ${selectedLibrary === 'mui' 
+            ? 'bg-blue-500 text-white' 
+            : 'bg-gray-200 dark:bg-zinc-700 dark:text-zinc-200'}`}
           onClick={() => onSelect('mui')}
         >
           Material UI
         </button>
         <button
-          className={`px-4 py-2 rounded ${selectedLibrary === 'antd' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+          className={`px-4 py-2 rounded ${selectedLibrary === 'antd' 
+            ? 'bg-blue-500 text-white' 
+            : 'bg-gray-200 dark:bg-zinc-700 dark:text-zinc-200'}`}
           onClick={() => onSelect('antd')}
         >
           Ant Design
@@ -140,22 +146,22 @@ const UILibrarySelector: React.FC<UILibrarySelectorProps> = ({ onSelect, selecte
       
       <div className="space-y-6">
         <div>
-          <h3 className="text-lg font-medium mb-2">Card Component</h3>
-          <div className="border p-4 rounded">
+          <h3 className="text-lg font-medium mb-2 dark:text-zinc-100">Card Component</h3>
+          <div className="border p-4 rounded dark:border-zinc-700">
             {renderCardPreview()}
           </div>
         </div>
         
         <div>
-          <h3 className="text-lg font-medium mb-2">Button Component</h3>
-          <div className="border p-4 rounded flex justify-center">
+          <h3 className="text-lg font-medium mb-2 dark:text-zinc-100">Button Component</h3>
+          <div className="border p-4 rounded flex justify-center dark:border-zinc-700">
             {renderButtonPreview()}
           </div>
         </div>
         
         <div>
-          <h3 className="text-lg font-medium mb-2">Input Component</h3>
-          <div className="border p-4 rounded">
+          <h3 className="text-lg font-medium mb-2 dark:text-zinc-100">Input Component</h3>
+          <div className="border p-4 rounded dark:border-zinc-700">
             {renderInputPreview()}
           </div>
         </div>

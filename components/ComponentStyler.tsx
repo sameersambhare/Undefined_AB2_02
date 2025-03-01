@@ -62,23 +62,19 @@ const ComponentStyler: React.FC<ComponentStylerProps> = ({ componentType, onStyl
   });
 
   // Track expanded sections
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
-    'Component Specific': true,
-    'Layout': false,
-    'Typography': false,
-    'Colors': false,
-    'Border': false,
-    'Effects': false
-  });
+  const [expandedSections, setExpandedSections] = useState<string[]>([
+    'Component Specific'
+  ]);
 
   // Track if popover is open
   const [isOpen, setIsOpen] = useState(false);
 
   const toggleSection = (section: string) => {
-    setExpandedSections(prev => ({
-      ...prev,
-      [section]: !prev[section]
-    }));
+    setExpandedSections(prev => 
+      prev.includes(section) 
+        ? prev.filter(s => s !== section) 
+        : [...prev, section]
+    );
   };
 
   const handleStyleChange = (key: string, value: string) => {
@@ -376,156 +372,146 @@ const ComponentStyler: React.FC<ComponentStylerProps> = ({ componentType, onStyl
           <Button
             variant="outline"
             size="default"
-            className="w-full flex items-center justify-center gap-2 bg-white hover:bg-gray-50 shadow-sm py-4 text-base font-medium"
+            className="w-full flex items-center justify-center gap-2 bg-white dark:bg-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-700 shadow-sm py-4 text-base font-medium dark:text-zinc-100 dark:border-zinc-700"
             onClick={() => setIsOpen(true)}
           >
-            <FiSettings className="w-5 h-5" />
-            <span>Edit Styles</span>
+            <FiSettings className="w-4 h-4" />
+            Style {componentType}
           </Button>
         </PopoverTrigger>
-        <PopoverContent 
-          className="w-96 max-h-[80vh] overflow-y-auto p-0 shadow-xl border border-gray-200 rounded-lg z-[100]"
-          side="right"
-          align="start"
-          sideOffset={5}
-          alignOffset={-5}
-          avoidCollisions={true}
-          collisionPadding={20}
-          style={{ maxWidth: 'calc(100vw - 40px)' }}
-        >
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-3 rounded-t-lg">
-            <div className="flex items-center justify-between">
-              <h4 className="font-medium text-base flex items-center gap-2">
-                <FiSettings className="w-4 h-4" />
-                {componentType} Properties
-              </h4>
-              <div className="flex gap-1">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-7 w-7 text-white hover:bg-white/20"
-                  onClick={resetToDefaults}
-                  title="Reset to defaults"
-                >
-                  <FiRefreshCw className="w-3.5 h-3.5" />
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-7 w-7 text-white hover:bg-white/20"
-                  title="Close"
-                  onClick={() => setIsOpen(false)}
-                >
-                  <FiX className="w-4 h-4" />
-                </Button>
+        <PopoverContent className="w-80 p-0 shadow-lg" align="center">
+          <div className="overflow-hidden rounded-lg">
+            <div className="bg-gradient-to-r from-orange-500 to-amber-500 text-white p-3">
+              <div className="flex justify-between items-center">
+                <h4 className="text-sm font-medium">
+                  {componentType} Properties
+                </h4>
+                <div className="flex gap-1">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-7 w-7 text-white hover:bg-white/20"
+                    onClick={resetToDefaults}
+                    title="Reset to defaults"
+                  >
+                    <FiRefreshCw className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-7 w-7 text-white hover:bg-white/20"
+                    title="Close"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <FiX className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
-          
-          <div className="p-4 space-y-4 bg-white rounded-b-lg thin-scrollbar">
-            {styleCategories.map((category, categoryIndex) => (
-              category.options.length > 0 && (
-                <Card key={categoryIndex} className="overflow-hidden border border-gray-200 shadow-sm">
-                  <div 
-                    className="flex items-center justify-between p-3 bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors"
-                    onClick={() => toggleSection(category.title)}
-                  >
-                    <h5 className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                      {category.title}
-                    </h5>
-                    <div>
-                      {expandedSections[category.title] ? (
-                        <FiChevronUp className="w-4 h-4 text-gray-500" />
-                      ) : (
-                        <FiChevronDown className="w-4 h-4 text-gray-500" />
-                      )}
+            
+            <div className="p-4 space-y-4 bg-white dark:bg-zinc-800 rounded-b-lg thin-scrollbar">
+              {styleCategories.map((category, categoryIndex) => (
+                category.options.length > 0 && (
+                  <Card key={categoryIndex} className="overflow-hidden border border-gray-200 dark:border-zinc-700 shadow-sm">
+                    <div 
+                      className="flex items-center justify-between p-3 bg-gray-50 dark:bg-zinc-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-zinc-600 transition-colors"
+                      onClick={() => toggleSection(category.title)}
+                    >
+                      <h5 className="text-sm font-medium text-gray-900 dark:text-zinc-100">
+                        {category.title}
+                      </h5>
+                      <div>
+                        {expandedSections.includes(category.title) ? (
+                          <FiChevronUp className="w-4 h-4 text-gray-500 dark:text-zinc-300" />
+                        ) : (
+                          <FiChevronDown className="w-4 h-4 text-gray-500 dark:text-zinc-300" />
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  
-                  {expandedSections[category.title] && (
-                    <div className="p-3 space-y-4 border-t border-gray-200 thin-scrollbar">
-                      {category.options.map((option, index) => (
-                        <div key={index} className="space-y-1.5">
-                          <Label className="flex justify-between text-sm text-gray-700">
-                            {option.label}
-                            {option.type === 'range' && (
-                              <span className="text-xs text-gray-500 tabular-nums font-mono bg-gray-100 px-1.5 py-0.5 rounded">
-                                {option.value}
-                                {option.label.includes('Opacity') ? '%' : ''}
-                              </span>
+                    
+                    {expandedSections.includes(category.title) && (
+                      <div className="p-3 space-y-3 border-t border-gray-200 dark:border-zinc-700">
+                        {category.options.map((option, optionIndex) => (
+                          <div key={optionIndex} className="space-y-1">
+                            <Label className="flex items-center justify-between text-sm text-gray-700 dark:text-zinc-200">
+                              {option.label}
+                              {option.type === 'range' && (
+                                <span className="text-xs text-gray-500 dark:text-zinc-400 tabular-nums font-mono bg-gray-100 dark:bg-zinc-700 px-1.5 py-0.5 rounded">
+                                  {option.value}
+                                  {option.label.includes('Opacity') ? '%' : ''}
+                                </span>
+                              )}
+                            </Label>
+                            
+                            {option.description && (
+                              <p className="text-xs text-gray-500 dark:text-zinc-400 mb-1">{option.description}</p>
                             )}
-                          </Label>
-                          
-                          {option.description && (
-                            <p className="text-xs text-gray-500 mb-1">{option.description}</p>
-                          )}
-                          
-                          {option.type === 'select' && (
-                            <select
-                              className="w-full p-2 text-sm border rounded-md bg-white hover:bg-gray-50 transition-colors focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none"
-                              value={option.value}
-                              onChange={(e) => option.onChange(e.target.value)}
-                            >
-                              {option.options?.map((opt) => (
-                                <option key={opt} value={opt}>
-                                  {opt}
-                                </option>
-                              ))}
-                            </select>
-                          )}
-                          
-                          {option.type === 'input' && (
-                            <Input
-                              value={option.value}
-                              onChange={(e) => option.onChange(e.target.value)}
-                              placeholder={`Enter ${option.label.toLowerCase()}`}
-                              className="bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            />
-                          )}
-                          
-                          {option.type === 'color' && (
-                            <div className="flex gap-2">
-                              <div className="relative">
-                                <Input
-                                  type="color"
-                                  value={option.value || '#000000'}
-                                  onChange={(e) => option.onChange(e.target.value)}
-                                  className="w-12 h-9 p-1 cursor-pointer"
-                                />
-                                <div 
-                                  className="absolute inset-0 pointer-events-none border border-gray-300 rounded-md"
-                                  style={{ backgroundColor: option.value || 'transparent' }}
-                                ></div>
-                              </div>
+                            
+                            {option.type === 'select' && (
+                              <select
+                                className="w-full p-2 text-sm border rounded-md bg-white dark:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-700 transition-colors focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none"
+                                value={option.value}
+                                onChange={(e) => option.onChange(e.target.value)}
+                              >
+                                {option.options?.map((opt) => (
+                                  <option key={opt} value={opt}>
+                                    {opt}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
+                            
+                            {option.type === 'input' && (
                               <Input
                                 value={option.value}
                                 onChange={(e) => option.onChange(e.target.value)}
-                                placeholder="#000000"
-                                className="bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono"
+                                className="bg-white dark:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-700 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 font-mono"
                               />
-                            </div>
-                          )}
-                          
-                          {option.type === 'range' && (
-                            <div className="flex gap-2 items-center pt-1">
-                              <input
-                                type="range"
-                                min={option.min}
-                                max={option.max}
-                                step={option.step}
-                                value={option.value}
-                                onChange={(e) => option.onChange(e.target.value)}
-                                className="w-full accent-blue-600"
-                              />
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </Card>
-              )
-            ))}
+                            )}
+                            
+                            {option.type === 'color' && (
+                              <div className="flex gap-2">
+                                <div 
+                                  className="w-8 h-8 rounded border border-gray-300 dark:border-zinc-600 overflow-hidden relative"
+                                  style={{ backgroundColor: option.value || 'transparent' }}
+                                >
+                                  <input 
+                                    type="color" 
+                                    value={option.value || '#000000'} 
+                                    onChange={(e) => option.onChange(e.target.value)}
+                                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                                  />
+                                </div>
+                                <Input
+                                  value={option.value}
+                                  onChange={(e) => option.onChange(e.target.value)}
+                                  placeholder="#000000"
+                                  className="bg-white dark:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-700 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 font-mono"
+                                />
+                              </div>
+                            )}
+                            
+                            {option.type === 'range' && (
+                              <div className="flex gap-2 items-center pt-1">
+                                <input
+                                  type="range"
+                                  min={option.min}
+                                  max={option.max}
+                                  step={option.step}
+                                  value={option.value}
+                                  onChange={(e) => option.onChange(e.target.value)}
+                                  className="w-full accent-orange-500"
+                                />
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </Card>
+                )
+              ))}
+            </div>
           </div>
         </PopoverContent>
       </Popover>

@@ -21,7 +21,7 @@ export default function CreateUI() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 flex flex-col">
       <Navbar />
       <main className="container mx-auto py-6 px-4 flex-grow">
         <div className="flex flex-col md:flex-row gap-6">
