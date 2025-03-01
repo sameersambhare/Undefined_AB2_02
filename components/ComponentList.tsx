@@ -553,50 +553,54 @@ const ComponentList: React.FC<ComponentListProps> = ({ onDragStart }) => {
   ];
 
   return (
-    <div className="w-72 bg-white dark:bg-zinc-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-zinc-700">
-      <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-zinc-100">Components</h2>
-      <div className="space-y-3">
-        {components.map((component) => {
-          const Icon = component.icon;
-          const currentLibrary = componentStyles[component.name]?.library || 'shadcn';
-          
-          return (
-            <div
-              key={component.name}
-              draggable
-              onDragStart={(e) => onDragStart(e, component.name, componentStyles[component.name], currentLibrary as UILibrary)}
-              className="group relative flex flex-col gap-2 p-3 rounded-md cursor-move hover:bg-gray-50 dark:hover:bg-zinc-700 border border-gray-200 dark:border-zinc-700 transition-colors dark:bg-zinc-800"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Icon className="w-5 h-5 text-gray-600 dark:text-zinc-400" />
-                  <span className="text-sm font-medium text-gray-700 dark:text-zinc-300">{component.name}</span>
+    <div className="w-72 h-[90vh] bg-white dark:bg-zinc-800 border-r border-gray-200 dark:border-zinc-700 flex flex-col">
+      <div className="p-4 border-b border-gray-200 dark:border-zinc-700">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-zinc-100">Components</h2>
+      </div>
+      <div className="flex-1 overflow-auto p-4">
+        <div className="space-y-3">
+          {components.map((component) => {
+            const Icon = component.icon;
+            const currentLibrary = componentStyles[component.name]?.library || 'shadcn';
+            
+            return (
+              <div
+                key={component.name}
+                draggable
+                onDragStart={(e) => onDragStart(e, component.name, componentStyles[component.name], currentLibrary as UILibrary)}
+                className="group relative flex flex-col gap-2 p-3 rounded-md cursor-move hover:bg-gray-50 dark:hover:bg-zinc-700 border border-gray-200 dark:border-zinc-700 transition-colors dark:bg-zinc-800"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Icon className="w-5 h-5 text-gray-600 dark:text-zinc-400" />
+                    <span className="text-sm font-medium text-gray-700 dark:text-zinc-300">{component.name}</span>
+                  </div>
+                  <div className="text-xs">
+                    <select 
+                      value={currentLibrary}
+                      onChange={(e) => handleLibraryChange(component.name, e.target.value as UILibrary)}
+                      className="text-xs border rounded px-1 py-0.5 bg-white dark:bg-zinc-700 dark:text-zinc-300 dark:border-zinc-600"
+                    >
+                      <option value="shadcn">shadcn</option>
+                      <option value="mui">Material UI</option>
+                      <option value="antd">Ant Design</option>
+                    </select>
+                  </div>
                 </div>
-                <div className="text-xs">
-                  <select 
-                    value={currentLibrary}
-                    onChange={(e) => handleLibraryChange(component.name, e.target.value as UILibrary)}
-                    className="text-xs border rounded px-1 py-0.5 bg-white dark:bg-zinc-700 dark:text-zinc-300 dark:border-zinc-600"
-                  >
-                    <option value="shadcn">shadcn</option>
-                    <option value="mui">Material UI</option>
-                    <option value="antd">Ant Design</option>
-                  </select>
+                <div className="flex items-center justify-center bg-gray-50 dark:bg-zinc-700 rounded-md p-3 h-20 overflow-hidden">
+                  {renderPreview(component.name)}
+                </div>
+                <div className="relative">
+                  <ComponentStyler
+                    componentType={component.name}
+                    onStyleChange={(styles) => handleStyleChange(component.name, styles)}
+                    initialStyles={componentStyles[component.name]}
+                  />
                 </div>
               </div>
-              <div className="flex items-center justify-center bg-gray-50 dark:bg-zinc-700 rounded-md p-3 h-20 overflow-hidden">
-                {renderPreview(component.name)}
-              </div>
-              <div className="relative">
-                <ComponentStyler
-                  componentType={component.name}
-                  onStyleChange={(styles) => handleStyleChange(component.name, styles)}
-                  initialStyles={componentStyles[component.name]}
-                />
-              </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </div>
   );

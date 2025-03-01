@@ -357,8 +357,10 @@ const DragDropEditor: React.FC = () => {
     setIsDraggingOver(false);
 
     const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const scrollTop = e.currentTarget.scrollTop;
+    const scrollLeft = e.currentTarget.scrollLeft;
+    const x = e.clientX - rect.left + scrollLeft;
+    const y = e.clientY - rect.top + scrollTop;
 
     // If we're moving an existing component
     if (draggedComponentId) {
@@ -368,7 +370,7 @@ const DragDropEditor: React.FC = () => {
           : comp
       );
       setComponents(newComponents);
-      updateHistory(newComponents); // Add to history
+      updateHistory(newComponents);
       setDraggedComponentId(null);
       return;
     }
@@ -1671,47 +1673,49 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
   };
 
   return (
-    <div className="flex-1 flex flex-col">
-      <div className="flex justify-between items-center mb-4 px-4">
+    <div className="flex-1 flex flex-col h-[90vh]">
+      <div className="flex justify-between items-center p-4 bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-700">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-zinc-100">Editor Canvas</h2>
       </div>
       <div
         ref={setCanvasRef}
-        className={`flex-1 min-h-[600px] bg-white dark:bg-zinc-800 rounded-t-lg shadow-sm border-2 ${
+        className={`flex-1 bg-white dark:bg-zinc-800 border-2 ${
           isDraggingOver && !isPreviewMode ? 'border-orange-500 border-dashed' : 'border-gray-200 dark:border-zinc-700'
-        } relative overflow-hidden`}
+        } relative overflow-y-scroll overflow-x-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:transparent [&::-webkit-scrollbar-thumb]:bg-gray-300 dark:[&::-webkit-scrollbar-thumb]:bg-zinc-600`}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         onClick={handleCanvasClick}
       >
-        {components.length === 0 && !isPreviewMode && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400">
-            <FiMove className="w-8 h-8 mb-2" />
-            <p className="text-sm">Drag and drop components here</p>
-          </div>
-        )}
+        <div className="min-h-full w-full relative" style={{ minHeight: '100%', height: '200%' }}>
+          {components.length === 0 && !isPreviewMode && (
+            <div className="absolute left-1/2 transform -translate-x-1/2 top-20 flex flex-col items-center justify-center text-gray-400">
+              <FiMove className="w-8 h-8 mb-2" />
+              <p className="text-sm">Drag and drop components here</p>
+            </div>
+          )}
 
-        {components.map((component) => (
-          <div
-            key={component.id}
-            className={`absolute ${isPreviewMode ? '' : 'cursor-move'}`}
-            style={{
-              left: `${component.position.x}px`,
-              top: `${component.position.y}px`,
-              transform: 'translate(-50%, -50%)',
-            }}
-          >
-            <ResizableComponent
-              component={component}
-              isSelected={selectedComponent === component.id}
-              isPreviewMode={isPreviewMode}
-              onResize={handleComponentResize}
+          {components.map((component) => (
+            <div
+              key={component.id}
+              className={`absolute ${isPreviewMode ? '' : 'cursor-move'}`}
+              style={{
+                left: `${component.position.x}px`,
+                top: `${component.position.y}px`,
+                transform: 'translate(-50%, -50%)',
+              }}
             >
-              {renderComponent(component)}
-            </ResizableComponent>
-          </div>
-        ))}
+              <ResizableComponent
+                component={component}
+                isSelected={selectedComponent === component.id}
+                isPreviewMode={isPreviewMode}
+                onResize={handleComponentResize}
+              >
+                {renderComponent(component)}
+              </ResizableComponent>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Footer with actions */}
