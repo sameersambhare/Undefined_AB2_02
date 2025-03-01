@@ -5,13 +5,16 @@ import { FiSquare, FiType, FiBox } from 'react-icons/fi';
 import { Button as ShadcnButton } from './ui/button';
 import { Input as ShadcnInput } from './ui/input';
 import { Card as ShadcnCard } from './ui/card';
-import { Button as MuiButton } from './ui-libraries/mui/button';
-import { Input as MuiInput } from './ui-libraries/mui/input';
-import { Card as MuiCard } from './ui-libraries/mui/card';
-import { Button as AntdButton } from './ui-libraries/antd/button';
-import { Input as AntdInput } from './ui-libraries/antd/input';
-import { Card as AntdCard } from './ui-libraries/antd/card';
+import dynamic from 'next/dynamic';
 import ComponentStyler from './ComponentStyler';
+
+// Dynamically import UI library components with SSR disabled
+const MuiButton = dynamic(() => import('./ui-libraries/mui/button').then(mod => mod.Button), { ssr: false });
+const MuiInput = dynamic(() => import('./ui-libraries/mui/input').then(mod => mod.Input), { ssr: false });
+const MuiCard = dynamic(() => import('./ui-libraries/mui/card').then(mod => mod.Card), { ssr: false });
+const AntdButton = dynamic(() => import('./ui-libraries/antd/button').then(mod => mod.Button), { ssr: false });
+const AntdInput = dynamic(() => import('./ui-libraries/antd/input').then(mod => mod.Input), { ssr: false });
+const AntdCard = dynamic(() => import('./ui-libraries/antd/card').then(mod => mod.Card), { ssr: false });
 
 // UI Library type
 type UILibrary = 'shadcn' | 'mui' | 'antd';
@@ -117,14 +120,6 @@ const ComponentList: React.FC<ComponentListProps> = ({ onDragStart }) => {
     Card: { ...defaultStyles.Card }
   });
   
-  // Add state to track if component is mounted (client-side only)
-  const [isMounted, setIsMounted] = useState(false);
-
-  // Use effect to set mounted state after component mounts on client
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
   const handleStyleChange = (componentName: string, styles: any) => {
     setComponentStyles(prev => ({
       ...prev,
@@ -140,11 +135,6 @@ const ComponentList: React.FC<ComponentListProps> = ({ onDragStart }) => {
   };
 
   const renderPreview = (name: string) => {
-    // Don't render actual components during SSR
-    if (!isMounted) {
-      return <div className="h-12 bg-gray-100 animate-pulse rounded"></div>;
-    }
-    
     const styles = componentStyles[name] || {};
     const library = styles.library || 'shadcn';
     
@@ -228,28 +218,37 @@ const ComponentList: React.FC<ComponentListProps> = ({ onDragStart }) => {
         switch (library) {
           case 'mui':
             return (
-              <MuiCard style={commonStyles}>
-                <span style={{ color: styles.textColor || defaultStyles.Card.textColor, padding: '16px', display: 'block' }}>
-                  {styles.cardContent || 'Card Content'}
-                </span>
-              </MuiCard>
+              <div className="scale-[0.7] transform-origin-center">
+                <MuiCard style={{...commonStyles, maxWidth: '100%', maxHeight: '100%'}}>
+                  <span style={{ color: styles.textColor || defaultStyles.Card.textColor, padding: '8px', display: 'block', fontSize: '0.8rem' }}>
+                    {styles.cardContent || 'Card Content'}
+                  </span>
+                </MuiCard>
+              </div>
             );
           case 'antd':
             return (
-              <AntdCard title={styles.cardTitle || "Card"} style={commonStyles}>
-                <span style={{ color: styles.textColor || defaultStyles.Card.textColor }}>
-                  {styles.cardContent || 'Card Content'}
-                </span>
-              </AntdCard>
+              <div className="scale-[0.7] transform-origin-center">
+                <AntdCard 
+                  title={styles.cardTitle || "Card"} 
+                  style={{...commonStyles, maxWidth: '100%', maxHeight: '100%'}}
+                  headStyle={{padding: '8px', fontSize: '0.9rem'}}
+                  bodyStyle={{padding: '8px'}}
+                >
+                  <span style={{ color: styles.textColor || defaultStyles.Card.textColor, fontSize: '0.8rem' }}>
+                    {styles.cardContent || 'Card Content'}
+                  </span>
+                </AntdCard>
+              </div>
             );
           case 'shadcn':
           default:
             return (
               <ShadcnCard
-                className="flex items-center justify-center"
-                style={commonStyles}
+                className="flex items-center justify-center p-2"
+                style={{...commonStyles, maxWidth: '100%', maxHeight: '100%'}}
               >
-                <span style={{ color: styles.textColor || defaultStyles.Card.textColor }}>
+                <span style={{ color: styles.textColor || defaultStyles.Card.textColor, fontSize: '0.8rem' }}>
                   {styles.cardContent || 'Card Content'}
                 </span>
               </ShadcnCard>
@@ -307,14 +306,18 @@ const ComponentList: React.FC<ComponentListProps> = ({ onDragStart }) => {
                   </select>
                 </div>
               </div>
-              <div className="flex items-center justify-center bg-gray-50 rounded-md p-3 h-20">
-                {renderPreview(component.name)}
+              <div className="flex items-center justify-center bg-gray-50 rounded-md p-3 h-20 overflow-hidden">
+                <div className="w-full h-full flex items-center justify-center">
+                  {renderPreview(component.name)}
+                </div>
               </div>
-              <ComponentStyler
-                componentType={component.name}
-                onStyleChange={(styles) => handleStyleChange(component.name, styles)}
-                initialStyles={componentStyles[component.name]}
-              />
+              <div className="relative">
+                <ComponentStyler
+                  componentType={component.name}
+                  onStyleChange={(styles) => handleStyleChange(component.name, styles)}
+                  initialStyles={componentStyles[component.name]}
+                />
+              </div>
             </div>
           );
         })}

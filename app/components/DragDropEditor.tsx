@@ -651,11 +651,13 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
                     {styles.buttonText === undefined || styles.buttonText === null ? 'MUI Button' : styles.buttonText}
                   </MuiButton>
                   {isSelected && (
-                    <ComponentStyler
-                      componentType={type}
-                      onStyleChange={(styles) => handleStyleChange(id, styles)}
-                      initialStyles={component.styles}
-                    />
+                    <div className="absolute top-full left-0 right-0 mt-2 z-10">
+                      <ComponentStyler
+                        componentType={type}
+                        onStyleChange={(styles) => handleStyleChange(id, styles)}
+                        initialStyles={component.styles}
+                      />
+                    </div>
                   )}
                 </div>
               );
@@ -672,11 +674,13 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
                     {styles.buttonText === undefined || styles.buttonText === null ? 'Ant Button' : styles.buttonText}
                   </AntdButton>
                   {isSelected && (
-                    <ComponentStyler
-                      componentType={type}
-                      onStyleChange={(styles) => handleStyleChange(id, styles)}
-                      initialStyles={component.styles}
-                    />
+                    <div className="absolute top-full left-0 right-0 mt-2 z-10">
+                      <ComponentStyler
+                        componentType={type}
+                        onStyleChange={(styles) => handleStyleChange(id, styles)}
+                        initialStyles={component.styles}
+                      />
+                    </div>
                   )}
                 </div>
               );
@@ -702,11 +706,13 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
                     {styles.buttonText === undefined || styles.buttonText === null ? 'Shadcn Button' : styles.buttonText}
                   </Button>
                   {isSelected && (
-                    <ComponentStyler
-                      componentType={type}
-                      onStyleChange={(styles) => handleStyleChange(id, styles)}
-                      initialStyles={component.styles}
-                    />
+                    <div className="absolute top-full left-0 right-0 mt-2 z-10">
+                      <ComponentStyler
+                        componentType={type}
+                        onStyleChange={(styles) => handleStyleChange(id, styles)}
+                        initialStyles={component.styles}
+                      />
+                    </div>
                   )}
                 </div>
               );
@@ -736,11 +742,13 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
                     disabled={isPreviewMode}
                   />
                   {isSelected && (
-                    <ComponentStyler
-                      componentType={type}
-                      onStyleChange={(styles) => handleStyleChange(id, styles)}
-                      initialStyles={component.styles}
-                    />
+                    <div className="absolute top-full left-0 right-0 mt-2 z-10">
+                      <ComponentStyler
+                        componentType={type}
+                        onStyleChange={(styles) => handleStyleChange(id, styles)}
+                        initialStyles={component.styles}
+                      />
+                    </div>
                   )}
                 </div>
               );
@@ -756,11 +764,13 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
                     disabled={isPreviewMode}
                   />
                   {isSelected && (
-                    <ComponentStyler
-                      componentType={type}
-                      onStyleChange={(styles) => handleStyleChange(id, styles)}
-                      initialStyles={component.styles}
-                    />
+                    <div className="absolute top-full left-0 right-0 mt-2 z-10">
+                      <ComponentStyler
+                        componentType={type}
+                        onStyleChange={(styles) => handleStyleChange(id, styles)}
+                        initialStyles={component.styles}
+                      />
+                    </div>
                   )}
                 </div>
               );
@@ -782,11 +792,13 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
                     disabled={isPreviewMode}
                   />
                   {isSelected && (
-                    <ComponentStyler
-                      componentType={type}
-                      onStyleChange={(styles) => handleStyleChange(id, styles)}
-                      initialStyles={component.styles}
-                    />
+                    <div className="absolute top-full left-0 right-0 mt-2 z-10">
+                      <ComponentStyler
+                        componentType={type}
+                        onStyleChange={(styles) => handleStyleChange(id, styles)}
+                        initialStyles={component.styles}
+                      />
+                    </div>
                   )}
                 </div>
               );
@@ -819,16 +831,18 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
                         {styles.cardTitle || 'MUI Card'}
                       </h3>
                       <p style={{ color: styles?.textColor, fontSize: '0.875rem' }}>
-                        {styles.cardContent || 'This is a Material UI card with elevation and padding.'}
+                        {styles.cardContent === undefined || styles.cardContent === null ? 'This is a Material UI card with elevation and padding.' : styles.cardContent}
                       </p>
                     </div>
                   </MuiCard>
                   {isSelected && (
-                    <ComponentStyler
-                      componentType={type}
-                      onStyleChange={(styles) => handleStyleChange(id, styles)}
-                      initialStyles={component.styles}
-                    />
+                    <div className="absolute top-full left-0 right-0 mt-2 z-10">
+                      <ComponentStyler
+                        componentType={type}
+                        onStyleChange={(styles) => handleStyleChange(id, styles)}
+                        initialStyles={component.styles}
+                      />
+                    </div>
                   )}
                 </div>
               );
@@ -843,15 +857,17 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
                     style={commonStyles}
                   >
                     <p style={{ color: styles?.textColor }}>
-                      {styles.cardContent || 'This is an Ant Design card with a title and content area.'}
+                      {styles.cardContent === undefined || styles.cardContent === null ? 'This is an Ant Design card with a title and content area.' : styles.cardContent}
                     </p>
                   </AntdCard>
                   {isSelected && (
-                    <ComponentStyler
-                      componentType={type}
-                      onStyleChange={(styles) => handleStyleChange(id, styles)}
-                      initialStyles={component.styles}
-                    />
+                    <div className="absolute top-full left-0 right-0 mt-2 z-10">
+                      <ComponentStyler
+                        componentType={type}
+                        onStyleChange={(styles) => handleStyleChange(id, styles)}
+                        initialStyles={component.styles}
+                      />
+                    </div>
                   )}
                 </div>
               );
@@ -876,16 +892,18 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
                         {styles.cardTitle || 'Shadcn Card'}
                       </h3>
                       <p className="text-sm text-muted-foreground" style={{ color: styles?.textColor }}>
-                        {styles.cardContent || 'This is a shadcn/ui card component with minimal styling.'}
+                        {styles.cardContent === undefined || styles.cardContent === null ? 'This is a shadcn/ui card component with minimal styling.' : styles.cardContent}
                       </p>
                     </div>
                   </Card>
                   {isSelected && (
-                    <ComponentStyler
-                      componentType={type}
-                      onStyleChange={(styles) => handleStyleChange(id, styles)}
-                      initialStyles={component.styles}
-                    />
+                    <div className="absolute top-full left-0 right-0 mt-2 z-10">
+                      <ComponentStyler
+                        componentType={type}
+                        onStyleChange={(styles) => handleStyleChange(id, styles)}
+                        initialStyles={component.styles}
+                      />
+                    </div>
                   )}
                 </div>
               );
