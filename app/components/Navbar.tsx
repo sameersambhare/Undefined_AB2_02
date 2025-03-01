@@ -18,6 +18,12 @@ const Navbar: React.FC = () => {
                             >
                                 <span>Home</span>
                             </Link>
+                            <Link 
+                                href="/createui" 
+                                className="flex items-center space-x-1 text-gray-600 hover:text-indigo-600 px-4 py-2 rounded-lg transition-colors"
+                            >
+                                <span>Create UI</span>
+                            </Link>
                         </div>
                     </div>
                     <div className="flex space-x-4">

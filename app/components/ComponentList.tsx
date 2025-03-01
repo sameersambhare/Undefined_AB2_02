@@ -2,9 +2,9 @@
 
 import React, { useState } from 'react';
 import { FiSquare, FiType, FiBox } from 'react-icons/fi';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Card } from './ui/card';
 import ComponentStyler from './ComponentStyler';
 
 interface ComponentListProps {
@@ -15,29 +15,128 @@ interface ComponentStyles {
   [key: string]: any;
 }
 
+// Define the type for component styles
+interface StyleProperties {
+  variant?: string;
+  size?: string;
+  backgroundColor?: string;
+  textColor?: string;
+  borderColor?: string;
+  borderWidth?: string;
+  borderStyle?: string;
+  borderRadius?: string;
+  padding?: string;
+  margin?: string;
+  fontSize?: string;
+  fontWeight?: string;
+  width?: string;
+  height?: string;
+  shadow?: string;
+  placeholder?: string;
+  opacity?: number;
+  textAlign?: string;
+  letterSpacing?: string;
+  [key: string]: any; // Allow for additional properties
+}
+
+interface DefaultStylesType {
+  Button: StyleProperties;
+  Input: StyleProperties;
+  Card: StyleProperties;
+  [key: string]: StyleProperties; // Allow indexing with string
+}
+
+// Default styles for components
+const defaultStyles: DefaultStylesType = {
+  Button: {
+    variant: "default",
+    size: "default",
+    backgroundColor: "#3b82f6", // blue-500
+    textColor: "#ffffff",
+    borderColor: "transparent",
+    borderWidth: "1px",
+    borderStyle: "solid",
+    borderRadius: "0.375rem", // rounded-md
+    padding: "0.5rem 1rem",
+    fontSize: "0.875rem", // text-sm
+    fontWeight: "500", // font-medium
+    width: "auto",
+    height: "auto",
+    shadow: "sm",
+  },
+  Input: {
+    placeholder: "Input field",
+    backgroundColor: "#ffffff",
+    borderColor: "#d1d5db", // gray-300
+    borderWidth: "1px",
+    borderStyle: "solid",
+    borderRadius: "0.375rem", // rounded-md
+    padding: "0.5rem 0.75rem",
+    fontSize: "0.875rem", // text-sm
+    width: "100%",
+    height: "auto",
+    textColor: "#374151", // gray-700
+  },
+  Card: {
+    backgroundColor: "#ffffff",
+    borderColor: "#e5e7eb", // gray-200
+    borderWidth: "1px",
+    borderStyle: "solid",
+    borderRadius: "0.5rem", // rounded-lg
+    padding: "1rem",
+    width: "100%",
+    height: "auto",
+    shadow: "sm",
+    textColor: "#374151", // gray-700
+  }
+};
+
 const ComponentList: React.FC<ComponentListProps> = ({ onDragStart }) => {
-  const [componentStyles, setComponentStyles] = useState<ComponentStyles>({});
+  const [componentStyles, setComponentStyles] = useState<ComponentStyles>({
+    Button: { ...defaultStyles.Button },
+    Input: { ...defaultStyles.Input },
+    Card: { ...defaultStyles.Card }
+  });
 
   const handleStyleChange = (componentName: string, styles: any) => {
     setComponentStyles(prev => ({
       ...prev,
-      [componentName]: styles
+      [componentName]: { ...prev[componentName], ...styles }
     }));
   };
 
   const renderPreview = (name: string) => {
     const styles = componentStyles[name] || {};
+    
+    const commonStyles = {
+      width: styles.width || defaultStyles[name].width,
+      height: styles.height || defaultStyles[name].height,
+      padding: styles.padding || defaultStyles[name].padding,
+      margin: styles.margin,
+      fontSize: styles.fontSize || defaultStyles[name].fontSize,
+      fontWeight: styles.fontWeight || defaultStyles[name].fontWeight,
+      backgroundColor: styles.backgroundColor || defaultStyles[name].backgroundColor,
+      color: styles.textColor || defaultStyles[name].textColor,
+      borderColor: styles.borderColor || defaultStyles[name].borderColor,
+      borderWidth: styles.borderWidth || defaultStyles[name].borderWidth,
+      borderStyle: styles.borderStyle || defaultStyles[name].borderStyle,
+      borderRadius: styles.borderRadius || defaultStyles[name].borderRadius,
+      opacity: styles.opacity ? Number(styles.opacity) / 100 : 1,
+      boxShadow: styles.shadow === 'none' ? 'none' : 
+                 styles.shadow === 'sm' ? '0 1px 2px 0 rgb(0 0 0 / 0.05)' :
+                 styles.shadow === 'md' ? '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' :
+                 styles.shadow === 'lg' ? '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)' :
+                 styles.shadow === 'xl' ? '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)' : 
+                 defaultStyles[name].shadow === 'sm' ? '0 1px 2px 0 rgb(0 0 0 / 0.05)' : 'none',
+    };
+
     switch (name) {
       case 'Button':
         return (
           <Button
-            size={styles.size || "sm"}
-            variant={styles.variant || "default"}
-            style={{
-              backgroundColor: styles.backgroundColor,
-              color: styles.textColor,
-              borderColor: styles.borderColor,
-            }}
+            size={styles.size || defaultStyles.Button.size}
+            variant={styles.variant || defaultStyles.Button.variant}
+            style={commonStyles}
           >
             Button
           </Button>
@@ -45,23 +144,17 @@ const ComponentList: React.FC<ComponentListProps> = ({ onDragStart }) => {
       case 'Input':
         return (
           <Input
-            placeholder={styles.placeholder || "Input field"}
-            className="w-32"
-            style={{
-              borderColor: styles.borderColor,
-            }}
+            placeholder={styles.placeholder || defaultStyles.Input.placeholder}
+            style={commonStyles}
           />
         );
       case 'Card':
         return (
           <Card
-            className="w-32 h-16 flex items-center justify-center p-2"
-            style={{
-              backgroundColor: styles.backgroundColor,
-              borderColor: styles.borderColor,
-            }}
+            className="flex items-center justify-center"
+            style={commonStyles}
           >
-            <span className="text-xs text-gray-600">Card Content</span>
+            <span style={{ color: styles.textColor || defaultStyles.Card.textColor }}>Card Content</span>
           </Card>
         );
       default:
@@ -101,12 +194,13 @@ const ComponentList: React.FC<ComponentListProps> = ({ onDragStart }) => {
                 <Icon className="w-5 h-5 text-gray-600" />
                 <span className="text-sm font-medium text-gray-700">{component.name}</span>
               </div>
-              <div className="flex items-center justify-center bg-gray-50 rounded-md p-2">
+              <div className="flex items-center justify-center bg-gray-50 rounded-md p-3 h-20">
                 {renderPreview(component.name)}
               </div>
               <ComponentStyler
                 componentType={component.name}
                 onStyleChange={(styles) => handleStyleChange(component.name, styles)}
+                initialStyles={componentStyles[component.name]}
               />
             </div>
           );
