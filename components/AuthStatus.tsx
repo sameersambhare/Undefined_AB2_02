@@ -4,7 +4,7 @@ import React, { useEffect } from 'react';
 import { useAuth } from '@/app/providers/AuthProvider';
 import { useToast } from '@/app/providers/ToastProvider';
 import Cookies from 'js-cookie';
-
+//thjis thihsxihjsa
 const AuthStatus: React.FC = () => {
   const { user, token } = useAuth();
   const toast = useToast();
