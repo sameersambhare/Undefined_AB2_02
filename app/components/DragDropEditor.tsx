@@ -4,13 +4,16 @@ import { FiMove, FiTrash2, FiSave, FiEye, FiEdit2, FiDownload, FiList, FiCode, F
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Card } from './ui/card';
+import { Label } from './ui/label';
 // Import UI library components
 import { Button as MuiButton } from './ui-libraries/mui/button';
 import { Input as MuiInput } from './ui-libraries/mui/input';
 import { Card as MuiCard } from './ui-libraries/mui/card';
+import { Label as MuiLabel } from './ui-libraries/mui/label';
 import { Button as AntdButton } from './ui-libraries/antd/button';
 import { Input as AntdInput } from './ui-libraries/antd/input';
 import { Card as AntdCard } from './ui-libraries/antd/card';
+import { Label as AntdLabel } from './ui-libraries/antd/label';
 import ComponentStyler from './ComponentStyler';
 import {
   AlertDialog,
@@ -82,6 +85,7 @@ const DragDropEditor: React.FC = () => {
   const [selectedLayout, setSelectedLayout] = useState<string>('');
   const [exportFormat, setExportFormat] = useState<string>('json');
   const [canvasRef, setCanvasRef] = useState<HTMLDivElement | null>(null);
+  const [editingText, setEditingText] = useState<string | null>(null);
 
   // Load saved layouts from localStorage on component mount - safely with useEffect
   useEffect(() => {
@@ -204,6 +208,15 @@ const DragDropEditor: React.FC = () => {
         textColor: "#374151", // gray-700
         cardTitle: "Card Title", // Add default card title
         cardContent: "Card Content", // Add default card content
+      },
+      Label: {
+        backgroundColor: "transparent",
+        textColor: "#374151", // gray-700
+        fontSize: "0.875rem", // text-sm
+        fontWeight: "500", // font-medium
+        width: "auto",
+        height: "auto",
+        labelText: "Label"
       }
     };
 
@@ -652,6 +665,10 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
     updateHistory(newComponents); // Add to history
   };
 
+  const handleLabelTextChange = (id: string, value: string) => {
+    handleStyleChange(id, { labelText: value });
+  };
+
   const renderComponent = (component: DroppedComponent) => {
     const { type, styles, id, library = 'shadcn' } = component;
     const isSelected = selectedComponent === id && !isPreviewMode;
@@ -895,8 +912,201 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
               )}
             </div>
           );
+        case 'Label':
+          switch (library) {
+            case 'mui':
+              return (
+                <div className={wrapperClasses}
+                  onClick={(e) => !isPreviewMode && handleComponentClick(id, e)}
+                  draggable={!isPreviewMode}
+                  onDragStart={(e) => handleComponentDragStart(e, id)}>
+                  {isSelected && !isPreviewMode && (
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-md z-50 bg-red-500 hover:bg-red-600 border-2 border-white"
+                      onClick={handleDelete}
+                    >
+                      <FiTrash2 className="h-3 w-3 text-white" />
+                    </Button>
+                  )}
+                  {isSelected && !isPreviewMode ? (
+                    <input
+                      type="text"
+                      value={editingText !== null ? editingText : (styles.labelText || '')}
+                      onChange={(e) => setEditingText(e.target.value)}
+                      onBlur={() => {
+                        if (editingText !== null) {
+                          handleLabelTextChange(id, editingText);
+                        }
+                        setEditingText(null);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          if (editingText !== null) {
+                            handleLabelTextChange(id, editingText);
+                          }
+                          setEditingText(null);
+                        }
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      className="bg-transparent border-b border-dashed border-gray-400 focus:outline-none px-1 min-w-[60px]"
+                      style={commonStyles}
+                      autoFocus
+                      placeholder="Enter text"
+                    />
+                  ) : (
+                    <div onClick={() => {
+                      if (isSelected && !isPreviewMode) {
+                        setEditingText(styles.labelText || '');
+                      }
+                    }}>
+                      <Label style={commonStyles}>
+                        {styles.labelText || 'Label'}
+                      </Label>
+                    </div>
+                  )}
+                  {isSelected && (
+                    <div className="absolute top-full left-0 right-0 mt-2 z-10">
+                      <ComponentStyler
+                        componentType={type}
+                        onStyleChange={(styles) => handleStyleChange(id, styles)}
+                        initialStyles={component.styles}
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            case 'antd':
+              return (
+                <div className={wrapperClasses}
+                  onClick={(e) => !isPreviewMode && handleComponentClick(id, e)}
+                  draggable={!isPreviewMode}
+                  onDragStart={(e) => handleComponentDragStart(e, id)}>
+                  {isSelected && !isPreviewMode && (
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-md z-50 bg-red-500 hover:bg-red-600 border-2 border-white"
+                      onClick={handleDelete}
+                    >
+                      <FiTrash2 className="h-3 w-3 text-white" />
+                    </Button>
+                  )}
+                  {isSelected && !isPreviewMode ? (
+                    <input
+                      type="text"
+                      value={editingText !== null ? editingText : (styles.labelText || '')}
+                      onChange={(e) => setEditingText(e.target.value)}
+                      onBlur={() => {
+                        if (editingText !== null) {
+                          handleLabelTextChange(id, editingText);
+                        }
+                        setEditingText(null);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          if (editingText !== null) {
+                            handleLabelTextChange(id, editingText);
+                          }
+                          setEditingText(null);
+                        }
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      className="bg-transparent border-b border-dashed border-gray-400 focus:outline-none px-1 min-w-[60px]"
+                      style={commonStyles}
+                      autoFocus
+                      placeholder="Enter text"
+                    />
+                  ) : (
+                    <div onClick={() => {
+                      if (isSelected && !isPreviewMode) {
+                        setEditingText(styles.labelText || '');
+                      }
+                    }}>
+                      <AntdLabel style={commonStyles}>
+                        {styles.labelText || 'Label'}
+                      </AntdLabel>
+                    </div>
+                  )}
+                  {isSelected && (
+                    <div className="absolute top-full left-0 right-0 mt-2 z-10">
+                      <ComponentStyler
+                        componentType={type}
+                        onStyleChange={(styles) => handleStyleChange(id, styles)}
+                        initialStyles={component.styles}
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            case 'shadcn':
+            default:
+              return (
+                <div className={wrapperClasses}
+                  onClick={(e) => !isPreviewMode && handleComponentClick(id, e)}
+                  draggable={!isPreviewMode}
+                  onDragStart={(e) => handleComponentDragStart(e, id)}>
+                  {isSelected && !isPreviewMode && (
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-md z-50 bg-red-500 hover:bg-red-600 border-2 border-white"
+                      onClick={handleDelete}
+                    >
+                      <FiTrash2 className="h-3 w-3 text-white" />
+                    </Button>
+                  )}
+                  {isSelected && !isPreviewMode ? (
+                    <input
+                      type="text"
+                      value={editingText !== null ? editingText : (styles.labelText || '')}
+                      onChange={(e) => setEditingText(e.target.value)}
+                      onBlur={() => {
+                        if (editingText !== null) {
+                          handleLabelTextChange(id, editingText);
+                        }
+                        setEditingText(null);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          if (editingText !== null) {
+                            handleLabelTextChange(id, editingText);
+                          }
+                          setEditingText(null);
+                        }
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      className="bg-transparent border-b border-dashed border-gray-400 focus:outline-none px-1 min-w-[60px]"
+                      style={commonStyles}
+                      autoFocus
+                      placeholder="Enter text"
+                    />
+                  ) : (
+                    <div onClick={() => {
+                      if (isSelected && !isPreviewMode) {
+                        setEditingText(styles.labelText || '');
+                      }
+                    }}>
+                      <Label style={commonStyles}>
+                        {styles.labelText || 'Label'}
+                      </Label>
+                    </div>
+                  )}
+                  {isSelected && (
+                    <div className="absolute top-full left-0 right-0 mt-2 z-10">
+                      <ComponentStyler
+                        componentType={type}
+                        onStyleChange={(styles) => handleStyleChange(id, styles)}
+                        initialStyles={component.styles}
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+          }
         default:
-          return <div>Unknown Component</div>;
+          return null;
       }
     };
 
@@ -948,7 +1158,7 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
               <Button 
                 variant="destructive" 
                 size="sm" 
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 text-black"
                 disabled={components.length === 0 || isPreviewMode}
               >
                 <FiTrash2 className="w-4 h-4" />
@@ -964,7 +1174,12 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleReset}>Reset</AlertDialogAction>
+                <AlertDialogAction onClick={() => {
+                  handleReset();
+                  updateHistory([]);
+                }}>
+                  Reset
+                </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>

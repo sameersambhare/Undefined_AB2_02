@@ -59,6 +59,7 @@ const ComponentStyler: React.FC<ComponentStylerProps> = ({ componentType, onStyl
     // Effects
     opacity: initialStyles.opacity || '100',
     shadow: initialStyles.shadow || 'none',
+    labelText: initialStyles.labelText || 'Label',
   });
 
   // Track expanded sections
@@ -112,6 +113,7 @@ const ComponentStyler: React.FC<ComponentStylerProps> = ({ componentType, onStyl
         opacity: "100",
         cardTitle: "",
         cardContent: "",
+        labelText: ""
       },
       Input: {
         placeholder: "Input field",
@@ -136,6 +138,7 @@ const ComponentStyler: React.FC<ComponentStylerProps> = ({ componentType, onStyl
         buttonText: "",
         cardTitle: "",
         cardContent: "",
+        labelText: ""
       },
       Card: {
         backgroundColor: "#ffffff",
@@ -160,6 +163,32 @@ const ComponentStyler: React.FC<ComponentStylerProps> = ({ componentType, onStyl
         opacity: "100",
         placeholder: "",
         buttonText: "",
+        labelText: ""
+      },
+      Label: {
+        backgroundColor: "transparent",
+        textColor: "#374151",
+        fontSize: "0.875rem",
+        fontWeight: "500",
+        width: "auto",
+        height: "auto",
+        padding: "0.25rem 0",
+        margin: "",
+        borderColor: "transparent",
+        borderWidth: "0px",
+        borderStyle: "none",
+        borderRadius: "0",
+        textAlign: "left",
+        letterSpacing: "normal",
+        opacity: "100",
+        shadow: "none",
+        labelText: "Label",
+        variant: "default",
+        size: "default",
+        placeholder: "",
+        buttonText: "",
+        cardTitle: "",
+        cardContent: ""
       }
     };
     
@@ -336,6 +365,16 @@ const ComponentStyler: React.FC<ComponentStylerProps> = ({ componentType, onStyl
             onChange: (value) => handleStyleChange('cardContent', value),
             description: 'Card body text'
           },
+        ];
+      case 'Label':
+        return [
+          {
+            label: 'Label Text',
+            type: 'input',
+            value: styles.labelText || 'Label',
+            onChange: (value) => handleStyleChange('labelText', value),
+            description: 'Set the label text'
+          }
         ];
       default:
         return [];
