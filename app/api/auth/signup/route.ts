@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
     // Generate JWT token
     const token = generateToken(user._id.toString());
     
-    // Return success response with token and user data (excluding password)
+    // Return success response with token and user data
     return NextResponse.json({
       success: true,
       token,
@@ -46,13 +46,12 @@ export async function POST(req: NextRequest) {
         id: user._id,
         name: user.name,
         email: user.email,
+        createdAt: user.createdAt
       },
     });
   } catch (error: any) {
-    console.error('Signup error:', error);
-    
     return NextResponse.json(
-      { error: error.message || 'Something went wrong' },
+      { error: 'Something went wrong. Please try again.' },
       { status: 500 }
     );
   }

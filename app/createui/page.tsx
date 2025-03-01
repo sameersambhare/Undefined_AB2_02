@@ -20,7 +20,6 @@ export default function CreateUI() {
   const [showDebug, setShowDebug] = useState(false);
 
   useEffect(() => {
-    // Check if user is authenticated
     const checkAuth = async () => {
       const authToken = Cookies.get('auth_token');
       
@@ -54,7 +53,6 @@ export default function CreateUI() {
     );
   }
 
-  // If not authenticated, don't render the page content
   if (!user) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 flex items-center justify-center">
@@ -75,7 +73,7 @@ export default function CreateUI() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 flex flex-col">
       <Navbar />
-      <main className="container mx-auto py-6 px-4 flex-grow">
+      <main className="container mx-auto py-6 px-4 flex-grow page-content">
         <button 
           onClick={() => setShowDebug(!showDebug)}
           className="mb-4 px-4 py-2 bg-gray-200 dark:bg-zinc-700 rounded-lg text-sm"

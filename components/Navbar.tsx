@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import React, { useState } from 'react';
-import { FiHome, FiEdit, FiInfo, FiMail, FiLogIn, FiUserPlus, FiUser, FiLogOut } from 'react-icons/fi';
+import { FiHome, FiEdit, FiInfo, FiMail, FiLogIn, FiUserPlus, FiUser, FiLogOut, FiGrid } from 'react-icons/fi';
 import ThemeToggle from './ThemeToggle';
 import { useAuth } from '@/app/providers/AuthProvider';
 import { useRouter } from 'next/navigation';
@@ -53,6 +53,13 @@ const Navbar: React.FC = () => {
                                 <span>Create UI</span>
                             </Link>
                             <Link 
+                                href="/layouts" 
+                                className="flex items-center space-x-2 text-gray-600 dark:text-gray-300 hover:text-orange-500 dark:hover:text-orange-400 px-4 py-2 rounded-lg transition-colors"
+                            >
+                                <FiGrid className="w-4 h-4" />
+                                <span>My Layouts</span>
+                            </Link>
+                            <Link 
                                 href="/about" 
                                 className="flex items-center space-x-2 text-gray-600 dark:text-gray-300 hover:text-orange-500 dark:hover:text-orange-400 px-4 py-2 rounded-lg transition-colors"
                             >
@@ -101,6 +108,13 @@ const Navbar: React.FC = () => {
                                             onClick={() => setMenuOpen(false)}
                                         >
                                             <FiUser className="mr-2" /> Profile
+                                        </Link>
+                                        <Link 
+                                            href="/layouts" 
+                                            className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-zinc-700"
+                                            onClick={() => setMenuOpen(false)}
+                                        >
+                                            <FiGrid className="mr-2" /> My Layouts
                                         </Link>
                                         <button 
                                             onClick={handleLogout}

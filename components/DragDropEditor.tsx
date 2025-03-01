@@ -35,6 +35,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from './ui/select';
+import { useAuth } from '@/app/providers/AuthProvider';
+import { useSearchParams } from 'next/navigation';
 
 // Add type imports for dynamic imports
 type Html2Canvas = typeof import('html2canvas')['default'];
@@ -58,9 +60,11 @@ interface DroppedComponent {
 }
 
 interface SavedLayout {
+  _id?: string;
   name: string;
   components: DroppedComponent[];
-  savedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // Add a counter for stable ID generation
@@ -182,16 +186,132 @@ const DragDropEditor: React.FC = () => {
   const [exportFormat, setExportFormat] = useState<string>('json');
   const [canvasRef, setCanvasRef] = useState<HTMLDivElement | null>(null);
 
-  // Load saved layouts from localStorage on component mount - safely with useEffect
+  // Add search params hook
+  const searchParams = useSearchParams();
+
+  // Add auth context
+  const { user } = useAuth();
+
+  // Replace localStorage loading with API fetch
   useEffect(() => {
-    try {
-      const layouts = JSON.parse(localStorage.getItem('savedLayouts') || '[]');
-      setSavedLayouts(layouts);
-    } catch (error) {
-      console.error('Error loading saved layouts:', error);
-      setSavedLayouts([]);
+    if (user) {
+      fetchLayouts();
     }
-  }, []);
+  }, [user]);
+
+  // Add effect to load layout from URL parameter
+  useEffect(() => {
+    const layoutId = searchParams?.get('layout');
+    if (layoutId && user) {
+      // Load the layout specified in the URL
+      loadLayoutById(layoutId);
+    }
+  }, [searchParams, user]);
+
+  // Add function to load a layout by ID
+  const loadLayoutById = async (layoutId: string) => {
+    try {
+      // Get auth token from cookies
+      const authToken = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('auth_token='))
+        ?.split('=')[1];
+      
+      if (!authToken) {
+        console.error('Authentication token not found');
+        return;
+      }
+      
+      // Fetch the specific layout from the API
+      const response = await fetch(`/api/layouts/${layoutId}`, {
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        // Process components to ensure they have the correct structure for the editor
+        const processedComponents = data.layout.components.map((component: any) => {
+          // Ensure component has a position object
+          if (!component.position && (component.x !== undefined && component.y !== undefined)) {
+            component.position = { x: component.x, y: component.y };
+          }
+          
+          // Ensure component has styles with width and height
+          if (!component.styles) {
+            component.styles = {};
+          }
+          
+          // Convert numeric width and height to string values with 'px' for the UI
+          if (component.width !== undefined) {
+            // If width is a number, convert to string with 'px'
+            if (typeof component.width === 'number') {
+              component.styles.width = `${component.width}px`;
+            } else if (!component.styles.width) {
+              // If width is already a string but not in styles, add it
+              component.styles.width = component.width;
+            }
+          }
+          
+          if (component.height !== undefined) {
+            // If height is a number, convert to string with 'px'
+            if (typeof component.height === 'number') {
+              component.styles.height = `${component.height}px`;
+            } else if (!component.styles.height) {
+              // If height is already a string but not in styles, add it
+              component.styles.height = component.height;
+            }
+          }
+          
+          return component;
+        });
+        
+        setComponents(processedComponents);
+        setSelectedComponent(null);
+        
+        // Set the layout name for potential re-saving
+        setLayoutName(data.layout.name || '');
+      } else {
+        console.error('Failed to load layout:', data.error);
+      }
+    } catch (error) {
+      console.error('Error loading layout:', error);
+    }
+  };
+
+  // Add function to fetch layouts from API
+  const fetchLayouts = async () => {
+    try {
+      // Get auth token from cookies
+      const authToken = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('auth_token='))
+        ?.split('=')[1];
+      
+      if (!authToken) {
+        console.error('Authentication token not found');
+        return;
+      }
+      
+      const response = await fetch('/api/layouts', {
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        setSavedLayouts(data.layouts);
+      } else {
+        console.error('Failed to fetch layouts:', data.error);
+      }
+    } catch (error) {
+      console.error('Error fetching layouts:', error);
+    }
+  };
 
   // Use a stable ID generation method that doesn't rely on Math.random() during SSR
   const generateComponentId = (componentType: string) => {
@@ -438,52 +558,170 @@ const DragDropEditor: React.FC = () => {
     setSelectedComponent(null);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!layoutName.trim()) return;
+    
+    // Check if user is authenticated
+    if (!user) {
+      alert('You must be logged in to save layouts');
+      return;
+    }
+
+    // Process components to ensure all required fields are present
+    const processedComponents = components.map(component => {
+      // Extract position values
+      const x = component.position.x;
+      const y = component.position.y;
+      
+      // Extract width and height from styles or set defaults
+      let width = component.styles.width || '100px';
+      let height = component.styles.height || '60px';
+      
+      // Convert width and height to numbers
+      // Remove 'px', '%', etc. and convert to number
+      const parseSize = (size: string | number): number => {
+        if (typeof size === 'number') return size;
+        
+        // Handle 'auto' or other non-numeric values
+        if (size === 'auto' || !size) return 100; // Default to 100
+        
+        // Extract numeric part
+        const numericValue = parseFloat(size.replace(/[^0-9.]/g, ''));
+        return isNaN(numericValue) ? 100 : numericValue;
+      };
+      
+      // Return a properly formatted component with all required fields
+      return {
+        ...component,
+        // Ensure position is properly formatted
+        position: { x, y },
+        // Add x, y as top-level properties for database schema
+        x,
+        y,
+        // Add width, height as top-level properties for database schema as numbers
+        width: parseSize(width),
+        height: parseSize(height),
+        // Keep the original string values in styles for the UI
+        styles: {
+          ...component.styles,
+          width: typeof width === 'string' ? width : `${width}px`,
+          height: typeof height === 'string' ? height : `${height}px`,
+        }
+      };
+    });
 
     // Create the saved layout object
-    const savedLayout: SavedLayout = {
+    const savedLayout = {
       name: layoutName,
-      components: components,
-      savedAt: new Date().toISOString(), // This is fine in a client component
+      components: processedComponents,
     };
 
     try {
-      const existingLayouts = JSON.parse(localStorage.getItem('savedLayouts') || '[]');
+      // Get auth token from cookies
+      const authToken = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('auth_token='))
+        ?.split('=')[1];
       
-      // Check if layout with same name exists and replace it
-      const layoutIndex = existingLayouts.findIndex((layout: SavedLayout) => layout.name === layoutName);
-      let updatedLayouts;
-      
-      if (layoutIndex >= 0) {
-        updatedLayouts = [...existingLayouts];
-        updatedLayouts[layoutIndex] = savedLayout;
-      } else {
-        updatedLayouts = [...existingLayouts, savedLayout];
+      if (!authToken) {
+        alert('Authentication token not found. Please log in again.');
+        return;
       }
       
-      localStorage.setItem('savedLayouts', JSON.stringify(updatedLayouts));
-      setSavedLayouts(updatedLayouts);
+      // Save layout to database using API
+      const response = await fetch('/api/layouts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify(savedLayout)
+      });
       
-      setShowSaveDialog(false);
-      setLayoutName('');
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        alert('Layout saved successfully!');
+        setShowSaveDialog(false);
+        setLayoutName('');
+        // Refresh the layouts list
+        fetchLayouts();
+      } else {
+        throw new Error(data.error || 'Failed to save layout');
+      }
     } catch (error) {
       console.error('Error saving layout:', error);
       alert('There was an error saving your layout. Please try again.');
     }
   };
 
-  const handleLoad = () => {
+  const handleLoad = async () => {
     if (!selectedLayout) return;
     
     try {
-      const layout = savedLayouts.find(layout => layout.name === selectedLayout);
-      if (layout) {
-        setComponents(layout.components);
-        setSelectedComponent(null);
+      // Get auth token from cookies
+      const authToken = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('auth_token='))
+        ?.split('=')[1];
+      
+      if (!authToken) {
+        alert('Authentication token not found. Please log in again.');
+        return;
       }
       
-      setShowLoadDialog(false);
+      // Fetch the specific layout from the API
+      const response = await fetch(`/api/layouts/${selectedLayout}`, {
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        // Process components to ensure they have the correct structure for the editor
+        const processedComponents = data.layout.components.map((component: any) => {
+          // Ensure component has a position object
+          if (!component.position && (component.x !== undefined && component.y !== undefined)) {
+            component.position = { x: component.x, y: component.y };
+          }
+          
+          // Ensure component has styles with width and height
+          if (!component.styles) {
+            component.styles = {};
+          }
+          
+          // Convert numeric width and height to string values with 'px' for the UI
+          if (component.width !== undefined) {
+            // If width is a number, convert to string with 'px'
+            if (typeof component.width === 'number') {
+              component.styles.width = `${component.width}px`;
+            } else if (!component.styles.width) {
+              // If width is already a string but not in styles, add it
+              component.styles.width = component.width;
+            }
+          }
+          
+          if (component.height !== undefined) {
+            // If height is a number, convert to string with 'px'
+            if (typeof component.height === 'number') {
+              component.styles.height = `${component.height}px`;
+            } else if (!component.styles.height) {
+              // If height is already a string but not in styles, add it
+              component.styles.height = component.height;
+            }
+          }
+          
+          return component;
+        });
+        
+        setComponents(processedComponents);
+        setSelectedComponent(null);
+        setShowLoadDialog(false);
+      } else {
+        throw new Error(data.error || 'Failed to load layout');
+      }
     } catch (error) {
       console.error('Error loading layout:', error);
       alert('There was an error loading your layout. Please try again.');
@@ -1580,8 +1818,8 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
                   </SelectTrigger>
                   <SelectContent>
                     {savedLayouts.map((layout) => (
-                      <SelectItem key={layout.name} value={layout.name}>
-                        {layout.name}
+                      <SelectItem key={layout._id || layout.name} value={layout._id || layout.name}>
+                        {layout.name} {layout.createdAt && `(${new Date(layout.createdAt).toLocaleDateString()})`}
                       </SelectItem>
                     ))}
                   </SelectContent>

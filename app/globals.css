@@ -1,8 +1,6 @@
 @import "tailwindcss/preflight";
 @tailwind utilities;
-
 @import "tailwindcss";
-
 @plugin "tailwindcss-animate";
 
 @custom-variant dark (&:is(.dark *));
@@ -66,6 +64,11 @@
   }
 }
 
+.page-content {
+  margin-top: 4rem;
+  padding-top: 1rem;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -105,7 +108,6 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
-/* Custom scrollbar styling */
 .thin-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: #d1d5db transparent;
