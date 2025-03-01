@@ -68,10 +68,16 @@ export async function POST(req: Request) {
     
     try {
       await transporter.sendMail({
-        from: process.env.EMAIL_USER,
+        from: {
+          name: 'UI Designer Team',
+          address: process.env.EMAIL_USER as string
+        },
         to: email,
         subject: emailSubject,
-        text: emailBody
+        html: emailBody,
+        headers: {
+          'Content-Type': 'text/html; charset=UTF-8'
+        }
       });
       console.log('Thank you email sent successfully');
     } catch (error) {
