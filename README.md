@@ -2,6 +2,13 @@
 
 A powerful web application that allows users to design beautiful UI components with AI assistance. Built with React, TypeScript, and Next.js.
 
+## 📸 Screenshots
+
+Here are some screenshots of the application:
+
+### Home Page
+![Home Page](public/screenshots/homepage.jpg)
+
 ## 🚀 Features
 
 - **Drag-and-Drop Interface**: Easily create UI layouts by dragging and dropping components
