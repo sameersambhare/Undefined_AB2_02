@@ -18,6 +18,11 @@ export default function CreateUI() {
   const router = useRouter();
   const toast = useToast();
   const [showDebug, setShowDebug] = useState(false);
+  const [selectedMobileComponent, setSelectedMobileComponent] = useState<{
+    type: string;
+    styles: any;
+    library: UILibrary;
+  } | null>(null);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -45,6 +50,23 @@ export default function CreateUI() {
     event.dataTransfer.setData('componentLibrary', library);
   };
 
+  const handleMobileComponentSelect = (
+    component: string,
+    styles: any,
+    library: UILibrary
+  ) => {
+    setSelectedMobileComponent({
+      type: component,
+      styles,
+      library
+    });
+    toast.info(`${component} selected. Tap on the canvas to place it.`);
+  };
+
+  const handleClearMobileComponent = () => {
+    setSelectedMobileComponent(null);
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 flex items-center justify-center">
@@ -55,8 +77,8 @@ export default function CreateUI() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 flex items-center justify-center">
-        <div className="text-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 flex items-center justify-center px-4">
+        <div className="text-center w-full max-w-md">
           <h2 className="text-xl font-semibold mb-2">Authentication Required</h2>
           <p className="mb-4">Please sign in to access this page.</p>
           <button 
@@ -73,10 +95,33 @@ export default function CreateUI() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 flex flex-col">
       <Navbar />
-      <main className="container mx-auto py-6 px-4 flex-grow page-content">        
-        <div className="flex flex-col md:flex-row gap-6">
-          <ComponentList onDragStart={handleDragStart} />
-          <DragDropEditor />
+      {selectedMobileComponent && (
+        <div className="fixed top-0 left-0 right-0 z-50 bg-orange-500 text-white py-2 px-4 text-center">
+          <p className="text-sm">
+            {selectedMobileComponent.type} selected. Tap on the canvas to place it.
+            <button 
+              onClick={handleClearMobileComponent}
+              className="ml-2 bg-white text-orange-500 px-2 py-0.5 rounded text-xs"
+            >
+              Cancel
+            </button>
+          </p>
+        </div>
+      )}
+      <main className="container mx-auto py-4 sm:py-6 px-3 sm:px-4 flex-grow page-content">        
+        <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
+          <div className="w-full lg:w-1/4 order-2 lg:order-1">
+            <ComponentList 
+              onDragStart={handleDragStart} 
+              onMobileComponentSelect={handleMobileComponentSelect}
+            />
+          </div>
+          <div className="w-full lg:w-3/4 order-1 lg:order-2">
+            <DragDropEditor 
+              selectedMobileComponent={selectedMobileComponent}
+              onMobileComponentPlaced={handleClearMobileComponent}
+            />
+          </div>
         </div>
       </main>
       <Footer />
