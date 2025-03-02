@@ -7,7 +7,7 @@ A powerful web application that allows users to design beautiful UI components w
 Here are some screenshots of the application:
 
 ### Home Page
-![Home Page](public/screenshots/homepage.png)
+![Home Page](public/screenshots/homepage.jpg)
 
 ## 🚀 Features
 
