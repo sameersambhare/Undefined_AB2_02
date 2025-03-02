@@ -65,14 +65,14 @@ const SignInForm = () => {
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-zinc-950">
             <Navbar />
-            <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-zinc-950 py-12 px-4 sm:px-6 lg:px-8 page-content">
-                <div className="max-w-md w-full space-y-8 bg-white dark:bg-zinc-900 p-8 rounded-xl shadow-sm">
+            <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-zinc-950 py-8 sm:py-12 px-4 sm:px-6 lg:px-8 page-content">
+                <div className="w-full max-w-md space-y-6 bg-white dark:bg-zinc-900 p-6 sm:p-8 rounded-xl shadow-sm">
                     <div>
                         <Link href="/" className="flex justify-center text-2xl font-bold text-orange-600 dark:text-orange-500 mb-2">
                             <span className="bg-orange-600 dark:bg-gradient-to-br dark:from-orange-600 dark:to-orange-700 text-white w-8 h-8 rounded flex items-center justify-center mr-2 text-lg">UI</span>
                             Designer
                         </Link>
-                        <h2 className="mt-6 text-center text-3xl font-bold text-gray-900 dark:text-zinc-50">
+                        <h2 className="mt-4 sm:mt-6 text-center text-2xl sm:text-3xl font-bold text-gray-900 dark:text-zinc-50">
                             Sign in to your account
                         </h2>
                         <p className="mt-2 text-center text-sm text-gray-600 dark:text-zinc-400">
@@ -89,7 +89,7 @@ const SignInForm = () => {
                         </div>
                     )}
                     
-                    <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+                    <form className="mt-6 sm:mt-8 space-y-5 sm:space-y-6" onSubmit={handleSubmit}>
                         <div className="rounded-md shadow-sm space-y-4">
                             <div>
                                 <label htmlFor="email" className="sr-only">
@@ -135,7 +135,7 @@ const SignInForm = () => {
                             </div>
                         </div>
 
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
                             <div className="flex items-center">
                                 <input
                                     id="remember-me"

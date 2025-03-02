@@ -40,19 +40,6 @@ import { useSearchParams } from 'next/navigation';
 import { useToast } from "@/components/ui/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 
-// Add type imports for dynamic imports
-type Html2Canvas = typeof import('html2canvas')['default'];
-interface JsPDFInstance {
-  internal: {
-    pageSize: {
-      getWidth: () => number;
-      getHeight: () => number;
-    };
-  };
-  addImage: (data: string, format: string, x: number, y: number, width: number, height: number) => void;
-  save: (filename: string) => void;
-}
-
 interface DroppedComponent {
   id: string;
   type: string;
@@ -171,22 +158,35 @@ const ResizableComponent: React.FC<ResizableComponentProps> = ({
   );
 };
 
-const DragDropEditor: React.FC = () => {
+interface DragDropEditorProps {
+  selectedMobileComponent?: {
+    type: string;
+    styles: any;
+    library: 'shadcn' | 'mui' | 'antd';
+  } | null;
+  onMobileComponentPlaced?: () => void;
+}
+
+const DragDropEditor: React.FC<DragDropEditorProps> = ({ 
+  selectedMobileComponent = null,
+  onMobileComponentPlaced
+}) => {
   const [components, setComponents] = useState<DroppedComponent[]>([]);
   const [history, setHistory] = useState<DroppedComponent[][]>([[]]); // Add history state
-  const [currentHistoryIndex, setCurrentHistoryIndex] = useState(0); // Add current history index
-  const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [historyIndex, setHistoryIndex] = useState<number>(0);
+  const [isDraggingOver, setIsDraggingOver] = useState<boolean>(false);
   const [selectedComponent, setSelectedComponent] = useState<string | null>(null);
-  const [showSaveDialog, setShowSaveDialog] = useState(false);
-  const [showExportDialog, setShowExportDialog] = useState(false);
-  const [showLoadDialog, setShowLoadDialog] = useState(false);
-  const [layoutName, setLayoutName] = useState('');
-  const [draggedComponentId, setDraggedComponentId] = useState<string | null>(null);
-  const [isPreviewMode, setIsPreviewMode] = useState(false);
-  const [savedLayouts, setSavedLayouts] = useState<SavedLayout[]>([]);
+  const [isPreviewMode, setIsPreviewMode] = useState<boolean>(false);
+  const [saveDialogOpen, setSaveDialogOpen] = useState<boolean>(false);
+  const [loadDialogOpen, setLoadDialogOpen] = useState<boolean>(false);
+  const [exportDialogOpen, setExportDialogOpen] = useState<boolean>(false);
+  const [layoutName, setLayoutName] = useState<string>('');
+  const [layouts, setLayouts] = useState<SavedLayout[]>([]);
+  const [exportType, setExportType] = useState<'json' | 'html' | 'react'>('html');
+  const [isMobileMoving, setIsMobileMoving] = useState<boolean>(false);
+  const [mobileMovingComponentId, setMobileMovingComponentId] = useState<string | null>(null);
+  const [touchStartPos, setTouchStartPos] = useState<{x: number, y: number} | null>(null);
   const [selectedLayout, setSelectedLayout] = useState<string>('');
-  const [exportFormat, setExportFormat] = useState<string>('json');
-  const [canvasRef, setCanvasRef] = useState<HTMLDivElement | null>(null);
 
   // Add search params hook
   const searchParams = useSearchParams();
@@ -309,7 +309,7 @@ const DragDropEditor: React.FC = () => {
       const data = await response.json();
       
       if (response.ok && data.success) {
-        setSavedLayouts(data.layouts);
+        setLayouts(data.layouts);
       } else {
         console.error('Failed to fetch layouts:', data.error);
       }
@@ -326,25 +326,25 @@ const DragDropEditor: React.FC = () => {
 
   // Add function to update history
   const updateHistory = (newComponents: DroppedComponent[]) => {
-    const newHistory = history.slice(0, currentHistoryIndex + 1);
+    const newHistory = history.slice(0, historyIndex + 1);
     newHistory.push([...newComponents]);
     setHistory(newHistory);
-    setCurrentHistoryIndex(newHistory.length - 1);
+    setHistoryIndex(newHistory.length - 1);
   };
 
   // Add undo function
   const handleUndo = () => {
-    if (currentHistoryIndex > 0) {
-      setCurrentHistoryIndex(currentHistoryIndex - 1);
-      setComponents([...history[currentHistoryIndex - 1]]);
+    if (historyIndex > 0) {
+      setHistoryIndex(historyIndex - 1);
+      setComponents([...history[historyIndex - 1]]);
     }
   };
 
   // Add redo function
   const handleRedo = () => {
-    if (currentHistoryIndex < history.length - 1) {
-      setCurrentHistoryIndex(currentHistoryIndex + 1);
-      setComponents([...history[currentHistoryIndex + 1]]);
+    if (historyIndex < history.length - 1) {
+      setHistoryIndex(historyIndex + 1);
+      setComponents([...history[historyIndex + 1]]);
     }
   };
 
@@ -368,15 +368,15 @@ const DragDropEditor: React.FC = () => {
     const y = e.clientY - rect.top + scrollTop;
 
     // If we're moving an existing component
-    if (draggedComponentId) {
+    if (mobileMovingComponentId) {
       const newComponents = components.map(comp => 
-        comp.id === draggedComponentId
+        comp.id === mobileMovingComponentId
           ? { ...comp, position: { x, y } }
           : comp
       );
       setComponents(newComponents);
       updateHistory(newComponents);
-      setDraggedComponentId(null);
+      setMobileMovingComponentId(null);
       return;
     }
 
@@ -552,7 +552,7 @@ const DragDropEditor: React.FC = () => {
 
   const handleComponentDragStart = (e: React.DragEvent<HTMLDivElement>, id: string) => {
     e.stopPropagation();
-    setDraggedComponentId(id);
+    setMobileMovingComponentId(id);
     // Set a transparent drag image
     const dragImage = new Image();
     dragImage.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
@@ -656,12 +656,8 @@ const DragDropEditor: React.FC = () => {
       const data = await response.json();
       
       if (response.ok && data.success) {
-        toast({
-          title: "Success",
-          description: "Layout saved successfully!",
-          className: "bg-green-500 text-white",
-        });
-        setShowSaveDialog(false);
+        alert('Layout saved successfully!');
+        setSaveDialogOpen(false);
         setLayoutName('');
         // Refresh the layouts list
         fetchLayouts();
@@ -741,7 +737,7 @@ const DragDropEditor: React.FC = () => {
         
         setComponents(processedComponents);
         setSelectedComponent(null);
-        setShowLoadDialog(false);
+        setLoadDialogOpen(false);
       } else {
         throw new Error(data.error || 'Failed to load layout');
       }
@@ -761,7 +757,7 @@ const DragDropEditor: React.FC = () => {
     // Get current timestamp for export
     const exportTimestamp = new Date().toISOString();
     
-    switch (exportFormat) {
+    switch (exportType) {
       case 'json':
         exportData = JSON.stringify({
           name: layoutName || 'Untitled Layout',
@@ -817,20 +813,6 @@ const DragDropEditor: React.FC = () => {
         URL.revokeObjectURL(reactUrl);
         break;
         
-      case 'jpg':
-        fileName = `${layoutName || 'ui-layout'}.jpg`;
-        if (canvasRef) {
-          exportAsImage(canvasRef, fileName, 'jpg');
-        }
-        break;
-        
-      case 'pdf':
-        fileName = `${layoutName || 'ui-layout'}.pdf`;
-        if (canvasRef) {
-          exportAsPDF(canvasRef, fileName);
-        }
-        break;
-        
       default:
         exportData = JSON.stringify(components, null, 2);
         fileName = 'layout.json';
@@ -848,134 +830,7 @@ const DragDropEditor: React.FC = () => {
         URL.revokeObjectURL(defaultUrl);
     }
     
-    setShowExportDialog(false);
-  };
-
-  // Function to export canvas as image (JPG)
-  const exportAsImage = (element: HTMLDivElement, fileName: string, type: 'jpg' | 'png') => {
-    // Use html2canvas to capture the canvas
-    import('html2canvas').then(html2canvasModule => {
-      const html2canvas = html2canvasModule.default as Html2Canvas;
-      html2canvas(element, {
-        backgroundColor: '#ffffff',
-        scale: 2, // Higher scale for better quality
-        logging: false,
-        useCORS: true,
-        allowTaint: true,
-      }).then(canvas => {
-        // Convert to image and download
-        const imgType = type === 'jpg' ? 'image/jpeg' : 'image/png';
-        const imgData = canvas.toDataURL(imgType, 0.8);
-        const link = document.createElement('a');
-        link.download = fileName;
-        link.href = imgData;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      });
-    });
-  };
-
-  // Function to export canvas as PDF
-  const exportAsPDF = (element: HTMLDivElement, fileName: string) => {
-    // Create a clone of the element to avoid modifying the original
-    let clonedElement: HTMLDivElement | null = null;
-    
-    try {
-      clonedElement = element.cloneNode(true) as HTMLDivElement;
-      document.body.appendChild(clonedElement);
-      clonedElement.style.position = 'absolute';
-      clonedElement.style.left = '-9999px';
-      clonedElement.style.width = `${element.offsetWidth}px`;
-      clonedElement.style.height = `${element.offsetHeight}px`;
-      
-      // Process all elements in the clone to replace oklch colors
-      const processElements = (elements: HTMLElement[]) => {
-        elements.forEach(el => {
-          // Process computed styles
-          const computedStyle = window.getComputedStyle(el);
-          const backgroundColor = computedStyle.backgroundColor;
-          const color = computedStyle.color;
-          
-          // Check if the color is in oklch format and convert it
-          if (backgroundColor && backgroundColor.includes('oklch')) {
-            el.style.backgroundColor = 'rgba(200, 200, 200, 0.5)'; // Fallback color
-          }
-          
-          if (color && color.includes('oklch')) {
-            el.style.color = '#333333'; // Fallback color
-          }
-          
-          // Process children recursively
-          if (el.children && el.children.length > 0) {
-            processElements(Array.from(el.children) as HTMLElement[]);
-          }
-        });
-      };
-      
-      // Start processing from the root element's children
-      processElements([clonedElement]);
-      
-      // Use html2canvas and jspdf to create PDF with the cloned element
-      Promise.all([
-        import('html2canvas'),
-        import('jspdf')
-      ]).then(([html2canvasModule, jspdfModule]) => {
-        const html2canvas = html2canvasModule.default as Html2Canvas;
-        const jspdf = jspdfModule.default;
-        
-        html2canvas(clonedElement as HTMLDivElement, {
-          backgroundColor: '#ffffff',
-          scale: 2,
-          logging: false,
-          useCORS: true,
-          allowTaint: true,
-          onclone: (clonedDoc, el) => {
-            // Additional processing in the cloned document if needed
-            return el;
-          }
-        }).then(canvas => {
-          const imgData = canvas.toDataURL('image/jpeg', 1.0);
-          const pdf = new jspdf('p', 'mm', 'a4') as JsPDFInstance;
-          const pdfWidth = pdf.internal.pageSize.getWidth();
-          const pdfHeight = pdf.internal.pageSize.getHeight();
-          const imgWidth = canvas.width;
-          const imgHeight = canvas.height;
-          const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
-          const imgX = (pdfWidth - imgWidth * ratio) / 2;
-          const imgY = 30;
-          
-          pdf.addImage(imgData, 'JPEG', imgX, imgY, imgWidth * ratio, imgHeight * ratio);
-          pdf.save(fileName);
-          
-          // Clean up - remove the cloned element
-          if (clonedElement && document.body.contains(clonedElement)) {
-            document.body.removeChild(clonedElement);
-          }
-        }).catch(error => {
-          console.error("Error rendering canvas:", error);
-          alert("There was an error exporting to PDF. Please try a different format.");
-          // Clean up
-          if (clonedElement && document.body.contains(clonedElement)) {
-            document.body.removeChild(clonedElement);
-          }
-        });
-      }).catch(error => {
-        console.error("Error loading modules:", error);
-        alert("There was an error loading the export modules. Please try again later.");
-        // Clean up
-        if (clonedElement && document.body.contains(clonedElement)) {
-          document.body.removeChild(clonedElement);
-        }
-      });
-    } catch (error) {
-      console.error("Error in PDF export:", error);
-      alert("There was an error preparing the PDF. Please try a different format.");
-      // Clean up
-      if (clonedElement && document.body.contains(clonedElement)) {
-        document.body.removeChild(clonedElement);
-      }
-    }
+    setExportDialogOpen(false);
   };
 
   const generateHtmlExport = () => {
@@ -1111,37 +966,125 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
     setSelectedComponent(id);
   };
 
-  const handleCanvasClick = () => {
-    setSelectedComponent(null);
+  // Add touch event handlers for mobile component movement
+  const handleTouchStart = (e: React.TouchEvent, id: string) => {
+    e.stopPropagation();
+    if (isPreviewMode) return;
+    
+    setIsMobileMoving(true);
+    setMobileMovingComponentId(id);
+    
+    const touch = e.touches[0];
+    setTouchStartPos({ x: touch.clientX, y: touch.clientY });
   };
 
-  const handleStyleChange = (componentId: string, newStyles: any) => {
-    const newComponents = components.map(comp => 
-      comp.id === componentId 
-        ? { ...comp, styles: { ...comp.styles, ...newStyles } }
-        : comp
-    );
-    setComponents(newComponents);
-    updateHistory(newComponents); // Add to history
-  };
-
-  const handleComponentResize = (id: string, width: string, height: string) => {
+  const handleTouchMove = (e: React.TouchEvent) => {
+    e.stopPropagation();
+    if (!isMobileMoving || !mobileMovingComponentId || !touchStartPos) return;
+    
+    const touch = e.touches[0];
+    const deltaX = touch.clientX - touchStartPos.x;
+    const deltaY = touch.clientY - touchStartPos.y;
+    
+    // Update component position
     const newComponents = components.map(comp => {
-      if (comp.id === id) {
-        const newStyles = { ...comp.styles, width, height };
-        
-        // For Circle, ensure width and height are the same
-        if (comp.type === 'Circle') {
-          newStyles.height = width;
-        }
-        
-        return { ...comp, styles: newStyles };
+      if (comp.id === mobileMovingComponentId) {
+        return {
+          ...comp,
+          position: {
+            x: comp.position.x + deltaX,
+            y: comp.position.y + deltaY
+          }
+        };
       }
       return comp;
     });
     
     setComponents(newComponents);
+    setTouchStartPos({ x: touch.clientX, y: touch.clientY });
+  };
+
+  const handleTouchEnd = () => {
+    if (isMobileMoving && mobileMovingComponentId) {
+      // Save the current state to history
+      updateHistory(components);
+      setIsMobileMoving(false);
+      setMobileMovingComponentId(null);
+      setTouchStartPos(null);
+    }
+  };
+
+  // Add the handleStyleChange function
+  const handleStyleChange = (id: string, newStyles: any) => {
+    const newComponents = components.map(comp => {
+      if (comp.id === id) {
+        return {
+          ...comp,
+          styles: {
+            ...comp.styles,
+            ...newStyles
+          }
+        };
+      }
+      return comp;
+    });
+    
+    setComponents(newComponents);
+    // Add history update to enable undo/redo for style changes
     updateHistory(newComponents);
+  };
+
+  // Add the missing handleComponentResize function
+  const handleComponentResize = (id: string, width: string, height: string) => {
+    const newComponents = components.map(comp => {
+      if (comp.id === id) {
+        return {
+          ...comp,
+          styles: {
+            ...comp.styles,
+            width,
+            height
+          }
+        };
+      }
+      return comp;
+    });
+    
+    setComponents(newComponents);
+    // Add history update to enable undo/redo for resize operations
+    updateHistory(newComponents);
+  };
+
+  const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    // If we're in mobile moving mode, don't clear the selection
+    if (!isMobileMoving) {
+      // Clear selected component
+      setSelectedComponent(null);
+    }
+    
+    // If we have a mobile component selected, place it at the click position
+    if (selectedMobileComponent && onMobileComponentPlaced) {
+      const canvasRect = e.currentTarget.getBoundingClientRect();
+      const x = e.clientX - canvasRect.left;
+      const y = e.clientY - canvasRect.top;
+      
+      // Create a new component with the selected type and styles
+      const newComponent: DroppedComponent = {
+        id: generateComponentId(selectedMobileComponent.type),
+        type: selectedMobileComponent.type,
+        position: { x, y },
+        styles: selectedMobileComponent.styles,
+        library: selectedMobileComponent.library
+      };
+      
+      // Add the new component to the canvas
+      const newComponents = [...components, newComponent];
+      updateHistory(newComponents);
+      setComponents(newComponents);
+      
+      // Notify parent that component has been placed
+      onMobileComponentPlaced();
+    }
   };
 
   const renderComponent = (component: DroppedComponent) => {
@@ -1201,21 +1144,31 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
                       <FiTrash2 className="h-3 w-3 text-white" />
                     </Button>
                   )}
-                  <MuiButton 
-                    // @ts-ignore - Ignoring type error for demo purposes
-                    variant="contained"
-                    color="primary"
+                  <button 
                     style={{
-                      ...commonStyles,
-                      textTransform: 'none',
-                      boxShadow: '0px 3px 1px -2px rgba(0,0,0,0.2), 0px 2px 2px 0px rgba(0,0,0,0.14), 0px 1px 5px 0px rgba(0,0,0,0.12)',
-                      fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-                      fontWeight: 500,
+                      backgroundColor: '#2196f3', // MUI primary blue
+                      color: '#ffffff',
+                      padding: '8px 22px',
                       borderRadius: '4px',
+                      fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+                      textTransform: 'uppercase',
+                      fontWeight: 500,
+                      fontSize: '0.875rem',
+                      lineHeight: 1.75,
+                      letterSpacing: '0.02857em',
+                      minWidth: '64px',
+                      boxShadow: '0px 3px 5px -1px rgba(0,0,0,0.2), 0px 6px 10px 0px rgba(0,0,0,0.14), 0px 1px 18px 0px rgba(0,0,0,0.12)',
+                      border: 'none',
+                      cursor: 'pointer',
+                      transition: 'all 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms',
+                      background: 'linear-gradient(to bottom, #42a5f5, #1976d2)',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      ...commonStyles
                     }}
                   >
-                    {styles.buttonText === undefined || styles.buttonText === null ? 'MUI Button' : styles.buttonText}
-                  </MuiButton>
+                    {styles.buttonText === undefined || styles.buttonText === null ? 'BUTTON' : styles.buttonText}
+                  </button>
                   {isSelected && (
                     <div className="absolute top-full left-0 right-0 mt-2 z-10">
                       <ComponentStyler
@@ -1243,12 +1196,28 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
                       <FiTrash2 className="h-3 w-3 text-white" />
                     </Button>
                   )}
-                  <AntdButton 
-                    type="primary"
-                    style={commonStyles}
+                  <button 
+                    style={{
+                      backgroundColor: '#1890ff', // Ant Design primary blue
+                      color: '#ffffff',
+                      padding: '4px 15px',
+                      height: '32px',
+                      borderRadius: '2px',
+                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial',
+                      fontWeight: 400,
+                      fontSize: '14px',
+                      lineHeight: '1.5715',
+                      border: 'none',
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 0 rgba(0, 0, 0, 0.045)',
+                      transition: 'all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1)',
+                      background: '#1890ff',
+                      textShadow: '0 -1px 0 rgba(0, 0, 0, 0.12)',
+                      ...commonStyles
+                    }}
                   >
-                    {styles.buttonText === undefined || styles.buttonText === null ? 'Ant Button' : styles.buttonText}
-                  </AntdButton>
+                    {styles.buttonText === undefined || styles.buttonText === null ? 'Button' : styles.buttonText}
+                  </button>
                   {isSelected && (
                     <div className="absolute top-full left-0 right-0 mt-2 z-10">
                       <ComponentStyler
@@ -1277,20 +1246,25 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
                       <FiTrash2 className="h-3 w-3 text-white" />
                     </Button>
                   )}
-                  <Button
-                    size={styles?.size || "default"}
-                    variant={styles?.variant || "default"}
+                  <button
                     style={{
-                      ...commonStyles,
+                      backgroundColor: '#f97316', // Shadcn orange primary
+                      color: '#ffffff',
+                      padding: '10px 16px',
+                      borderRadius: '6px',
                       fontFamily: 'var(--font-sans)',
                       fontWeight: 500,
-                      borderRadius: 'var(--radius)',
+                      fontSize: '14px',
+                      lineHeight: '1.5',
+                      border: 'none',
+                      cursor: 'pointer',
+                      transition: 'background-color 150ms cubic-bezier(0.4, 0, 0.2, 1)',
                       boxShadow: 'none',
+                      ...commonStyles
                     }}
-                    className="transition-colors"
                   >
-                    {styles.buttonText === undefined || styles.buttonText === null ? 'Shadcn Button' : styles.buttonText}
-                  </Button>
+                    {styles.buttonText === undefined || styles.buttonText === null ? 'Button' : styles.buttonText}
+                  </button>
                   {isSelected && (
                     <div className="absolute top-full left-0 right-0 mt-2 z-10">
                       <ComponentStyler
@@ -1304,82 +1278,382 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
               );
           }
         case 'Input':
-          return (
-            <div className={wrapperClasses}
-              onClick={(e) => !isPreviewMode && handleComponentClick(id, e)}
-              draggable={!isPreviewMode}
-              onDragStart={(e) => handleComponentDragStart(e, id)}>
-              {isSelected && !isPreviewMode && (
-                <Button
-                  variant="destructive"
-                  size="icon"
-                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-md z-50 bg-red-500 hover:bg-red-600 border-2 border-white"
-                  onClick={handleDelete}
-                >
-                  <FiTrash2 className="h-3 w-3 text-white" />
-                </Button>
-              )}
-              <Input
-                placeholder={styles.placeholder || "Input field"}
-                className="dark:text-zinc-200 dark:placeholder:text-zinc-400 dark:bg-zinc-800 dark:border-zinc-700"
-                style={{
-                  ...commonStyles,
-                  fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-                  borderRadius: '4px',
-                }}
-                disabled={isPreviewMode}
-              />
-              {isSelected && (
-                <div className="absolute top-full left-0 right-0 mt-2 z-10">
-                  <ComponentStyler
-                    componentType={type}
-                    onStyleChange={(styles) => handleStyleChange(id, styles)}
-                    initialStyles={component.styles}
+          switch (library) {
+            case 'mui':
+              return (
+                <div className={wrapperClasses}
+                  onClick={(e) => !isPreviewMode && handleComponentClick(id, e)}
+                  draggable={!isPreviewMode}
+                  onDragStart={(e) => handleComponentDragStart(e, id)}>
+                  {isSelected && !isPreviewMode && (
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-md z-50 bg-red-500 hover:bg-red-600 border-2 border-white"
+                      onClick={handleDelete}
+                    >
+                      <FiTrash2 className="h-3 w-3 text-white" />
+                    </Button>
+                  )}
+                  <input
+                    type="text"
+                    placeholder={styles.placeholder || "Input field"}
+                    style={{
+                      backgroundColor: '#ffffff',
+                      color: '#1976d2',
+                      padding: '8px 12px',
+                      borderRadius: '4px',
+                      fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+                      fontSize: '16px',
+                      lineHeight: '1.5',
+                      border: '1px solid #c4c4c4',
+                      outline: 'none',
+                      transition: 'border-color 200ms cubic-bezier(0.4, 0, 0.2, 1)',
+                      boxShadow: 'none',
+                      ...commonStyles
+                    }}
+                    disabled={isPreviewMode}
                   />
+                  {isSelected && (
+                    <div className="absolute top-full left-0 right-0 mt-2 z-10">
+                      <ComponentStyler
+                        componentType={type}
+                        onStyleChange={(styles) => handleStyleChange(id, styles)}
+                        initialStyles={component.styles}
+                      />
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          );
+              );
+            case 'antd':
+              return (
+                <div className={wrapperClasses}
+                  onClick={(e) => !isPreviewMode && handleComponentClick(id, e)}
+                  draggable={!isPreviewMode}
+                  onDragStart={(e) => handleComponentDragStart(e, id)}>
+                  {isSelected && !isPreviewMode && (
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-md z-50 bg-red-500 hover:bg-red-600 border-2 border-white"
+                      onClick={handleDelete}
+                    >
+                      <FiTrash2 className="h-3 w-3 text-white" />
+                    </Button>
+                  )}
+                  <input
+                    type="text"
+                    placeholder={styles.placeholder || "Input field"}
+                    style={{
+                      backgroundColor: '#ffffff',
+                      color: '#000000',
+                      padding: '4px 11px',
+                      height: '32px',
+                      borderRadius: '2px',
+                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial',
+                      fontSize: '14px',
+                      lineHeight: '1.5715',
+                      border: '1px solid #d9d9d9',
+                      outline: 'none',
+                      transition: 'all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1)',
+                      boxShadow: 'none',
+                      ...commonStyles
+                    }}
+                    disabled={isPreviewMode}
+                  />
+                  {isSelected && (
+                    <div className="absolute top-full left-0 right-0 mt-2 z-10">
+                      <ComponentStyler
+                        componentType={type}
+                        onStyleChange={(styles) => handleStyleChange(id, styles)}
+                        initialStyles={component.styles}
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            case 'shadcn':
+            default:
+              return (
+                <div className={wrapperClasses}
+                  onClick={(e) => !isPreviewMode && handleComponentClick(id, e)}
+                  draggable={!isPreviewMode}
+                  onDragStart={(e) => handleComponentDragStart(e, id)}>
+                  {isSelected && !isPreviewMode && (
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-md z-50 bg-red-500 hover:bg-red-600 border-2 border-white"
+                      onClick={handleDelete}
+                    >
+                      <FiTrash2 className="h-3 w-3 text-white" />
+                    </Button>
+                  )}
+                  <input
+                    type="text"
+                    placeholder={styles.placeholder || "Input field"}
+                    style={{
+                      backgroundColor: '#ffffff',
+                      color: '#09090b',
+                      padding: '8px 12px',
+                      height: '40px',
+                      borderRadius: '6px',
+                      fontFamily: 'var(--font-sans)',
+                      fontSize: '14px',
+                      lineHeight: '1.5',
+                      border: '1px solid #e2e8f0',
+                      outline: 'none',
+                      transition: 'border-color 150ms cubic-bezier(0.4, 0, 0.2, 1)',
+                      boxShadow: 'none',
+                      ...commonStyles
+                    }}
+                    disabled={isPreviewMode}
+                  />
+                  {isSelected && (
+                    <div className="absolute top-full left-0 right-0 mt-2 z-10">
+                      <ComponentStyler
+                        componentType={type}
+                        onStyleChange={(styles) => handleStyleChange(id, styles)}
+                        initialStyles={component.styles}
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+          }
         case 'Card':
-          return (
-            <div className={wrapperClasses}
-              onClick={(e) => !isPreviewMode && handleComponentClick(id, e)}
-              draggable={!isPreviewMode}
-              onDragStart={(e) => handleComponentDragStart(e, id)}>
-              {isSelected && !isPreviewMode && (
-                <Button
-                  variant="destructive"
-                  size="icon"
-                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-md z-50 bg-red-500 hover:bg-red-600 border-2 border-white"
-                  onClick={handleDelete}
-                >
-                  <FiTrash2 className="h-3 w-3 text-white" />
-                </Button>
-              )}
-              <Card className="dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-200">
-                <div style={{ 
-                  ...commonStyles,
-                  padding: '16px',
-                }}>
-                  <h3 className="text-gray-900 dark:text-zinc-100 font-medium mb-2 text-lg">
-                    {styles.cardTitle || 'Card Title'}
-                  </h3>
-                  <p className="text-gray-700 dark:text-zinc-300 text-sm">
-                    {styles.cardContent === undefined || styles.cardContent === null ? 'Card content goes here' : styles.cardContent}
-                  </p>
+          switch (library) {
+            case 'mui':
+              return (
+                <div className={wrapperClasses}
+                  onClick={(e) => !isPreviewMode && handleComponentClick(id, e)}
+                  draggable={!isPreviewMode}
+                  onDragStart={(e) => handleComponentDragStart(e, id)}>
+                  {isSelected && !isPreviewMode && (
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-md z-50 bg-red-500 hover:bg-red-600 border-2 border-white"
+                      onClick={handleDelete}
+                    >
+                      <FiTrash2 className="h-3 w-3 text-white" />
+                    </Button>
+                  )}
+                  <div style={{ 
+                    backgroundColor: '#ffffff',
+                    borderRadius: '4px',
+                    boxShadow: '0px 2px 1px -1px rgba(0,0,0,0.2), 0px 1px 1px 0px rgba(0,0,0,0.14), 0px 1px 3px 0px rgba(0,0,0,0.12)',
+                    overflow: 'hidden',
+                    transition: 'box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1) 0ms',
+                    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+                    ...commonStyles
+                  }}>
+                    <div style={{ 
+                      backgroundColor: '#1976d2', 
+                      color: '#ffffff',
+                      padding: '16px',
+                      fontWeight: 500,
+                      fontSize: '1.25rem',
+                      lineHeight: 1.6,
+                    }}>
+                      {styles.cardTitle || 'Card Title'}
+                    </div>
+                    <div style={{ padding: '16px' }}>
+                      <p style={{ 
+                        color: 'rgba(0, 0, 0, 0.87)',
+                        fontSize: '0.875rem',
+                        lineHeight: 1.43,
+                        letterSpacing: '0.01071em',
+                        marginBottom: '16px'
+                      }}>
+                        {styles.cardContent === undefined || styles.cardContent === null ? 'Card content goes here' : styles.cardContent}
+                      </p>
+                      <div style={{ 
+                        display: 'flex',
+                        padding: '8px',
+                        alignItems: 'center',
+                        borderTop: '1px solid rgba(0, 0, 0, 0.12)',
+                        marginTop: '8px'
+                      }}>
+                        <button style={{ 
+                          color: '#1976d2',
+                          padding: '6px 8px',
+                          fontSize: '0.8125rem',
+                          minWidth: '64px',
+                          boxSizing: 'border-box',
+                          fontWeight: 500,
+                          lineHeight: 1.75,
+                          borderRadius: '4px',
+                          letterSpacing: '0.02857em',
+                          textTransform: 'uppercase',
+                          border: 'none',
+                          background: 'none',
+                          cursor: 'pointer'
+                        }}>
+                          Action
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  {isSelected && (
+                    <div className="absolute top-full left-0 right-0 mt-2 z-10">
+                      <ComponentStyler
+                        componentType={type}
+                        onStyleChange={(styles) => handleStyleChange(id, styles)}
+                        initialStyles={component.styles}
+                      />
+                    </div>
+                  )}
                 </div>
-              </Card>
-              {isSelected && (
-                <div className="absolute top-full left-0 right-0 mt-2 z-10">
-                  <ComponentStyler
-                    componentType={type}
-                    onStyleChange={(styles) => handleStyleChange(id, styles)}
-                    initialStyles={component.styles}
-                  />
+              );
+            case 'antd':
+              return (
+                <div className={wrapperClasses}
+                  onClick={(e) => !isPreviewMode && handleComponentClick(id, e)}
+                  draggable={!isPreviewMode}
+                  onDragStart={(e) => handleComponentDragStart(e, id)}>
+                  {isSelected && !isPreviewMode && (
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-md z-50 bg-red-500 hover:bg-red-600 border-2 border-white"
+                      onClick={handleDelete}
+                    >
+                      <FiTrash2 className="h-3 w-3 text-white" />
+                    </Button>
+                  )}
+                  <div style={{ 
+                    backgroundColor: '#ffffff',
+                    borderRadius: '2px',
+                    boxShadow: '0 1px 2px -2px rgba(0, 0, 0, 0.16), 0 3px 6px 0 rgba(0, 0, 0, 0.12), 0 5px 12px 4px rgba(0, 0, 0, 0.09)',
+                    border: '1px solid #f0f0f0',
+                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial',
+                    ...commonStyles
+                  }}>
+                    <div style={{ 
+                      borderBottom: '1px solid #f0f0f0',
+                      padding: '16px 24px',
+                      color: 'rgba(0, 0, 0, 0.85)',
+                      fontWeight: 500,
+                      fontSize: '16px',
+                      background: 'transparent',
+                      borderRadius: '2px 2px 0 0',
+                    }}>
+                      {styles.cardTitle || 'Card Title'}
+                    </div>
+                    <div style={{ padding: '24px' }}>
+                      <p style={{ 
+                        color: 'rgba(0, 0, 0, 0.65)',
+                        fontSize: '14px',
+                        lineHeight: 1.5715,
+                      }}>
+                        {styles.cardContent === undefined || styles.cardContent === null ? 'Card content goes here' : styles.cardContent}
+                      </p>
+                    </div>
+                    <div style={{ 
+                      borderTop: '1px solid #f0f0f0',
+                      padding: '12px 24px',
+                      background: 'transparent',
+                      display: 'flex',
+                      justifyContent: 'flex-end'
+                    }}>
+                      <button style={{ 
+                        color: '#000000',
+                        backgroundColor: '#ffffff',
+                        borderColor: '#d9d9d9',
+                        padding: '4px 15px',
+                        fontSize: '14px',
+                        height: '32px',
+                        borderRadius: '2px',
+                        cursor: 'pointer',
+                        border: '1px solid #d9d9d9',
+                        marginRight: '8px'
+                      }}>
+                        Cancel
+                      </button>
+                      <button style={{ 
+                        color: '#ffffff',
+                        backgroundColor: '#1890ff',
+                        borderColor: '#1890ff',
+                        padding: '4px 15px',
+                        fontSize: '14px',
+                        height: '32px',
+                        borderRadius: '2px',
+                        cursor: 'pointer',
+                        border: '1px solid #1890ff'
+                      }}>
+                        OK
+                      </button>
+                    </div>
+                  </div>
+                  {isSelected && (
+                    <div className="absolute top-full left-0 right-0 mt-2 z-10">
+                      <ComponentStyler
+                        componentType={type}
+                        onStyleChange={(styles) => handleStyleChange(id, styles)}
+                        initialStyles={component.styles}
+                      />
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          );
+              );
+            case 'shadcn':
+            default:
+              return (
+                <div className={wrapperClasses}
+                  onClick={(e) => !isPreviewMode && handleComponentClick(id, e)}
+                  draggable={!isPreviewMode}
+                  onDragStart={(e) => handleComponentDragStart(e, id)}>
+                  {isSelected && !isPreviewMode && (
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-md z-50 bg-red-500 hover:bg-red-600 border-2 border-white"
+                      onClick={handleDelete}
+                    >
+                      <FiTrash2 className="h-3 w-3 text-white" />
+                    </Button>
+                  )}
+                  <div style={{ 
+                    backgroundColor: '#ffffff',
+                    borderRadius: '8px',
+                    border: '1px solid #e2e8f0',
+                    boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
+                    overflow: 'hidden',
+                    fontFamily: 'var(--font-sans)',
+                    ...commonStyles
+                  }}>
+                    <div style={{ padding: '24px' }}>
+                      <h3 style={{ 
+                        color: '#09090b',
+                        fontSize: '18px',
+                        fontWeight: 600,
+                        marginBottom: '8px',
+                        lineHeight: 1.5
+                      }}>
+                        {styles.cardTitle || 'Card Title'}
+                      </h3>
+                      <p style={{ 
+                        color: '#71717a',
+                        fontSize: '14px',
+                        lineHeight: 1.5
+                      }}>
+                        {styles.cardContent === undefined || styles.cardContent === null ? 'Card content goes here' : styles.cardContent}
+                      </p>
+                    </div>
+                  </div>
+                  {isSelected && (
+                    <div className="absolute top-full left-0 right-0 mt-2 z-10">
+                      <ComponentStyler
+                        componentType={type}
+                        onStyleChange={(styles) => handleStyleChange(id, styles)}
+                        initialStyles={component.styles}
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+          }
         case 'Rectangle':
           return (
             <div className={wrapperClasses}
@@ -1695,13 +1969,113 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
 
   return (
     <div className="flex-1 flex flex-col h-[90vh]">
-      <div className="flex justify-between items-center p-4 bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-700">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-zinc-100">Editor Canvas</h2>
+      <div className="flex flex-wrap justify-between items-center p-3 sm:p-4 bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-700">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-zinc-100 mb-2 sm:mb-0">
+          Editor Canvas
+          {selectedMobileComponent && (
+            <span className="ml-2 text-sm font-normal text-orange-500">
+              Tap to place {selectedMobileComponent.type}
+            </span>
+          )}
+          {isMobileMoving && (
+            <span className="ml-2 text-sm font-normal text-blue-500">
+              Moving component...
+            </span>
+          )}
+        </h2>
+        
+        {/* Mobile-friendly toolbar */}
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-1 text-xs"
+            onClick={() => setIsPreviewMode(!isPreviewMode)}
+          >
+            {isPreviewMode ? (
+              <>
+                <FiEdit2 className="w-3.5 h-3.5" />
+                <span className="hidden xs:inline">Edit</span>
+              </>
+            ) : (
+              <>
+                <FiEye className="w-3.5 h-3.5" />
+                <span className="hidden xs:inline">Preview</span>
+              </>
+            )}
+          </Button>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-1 text-xs"
+            onClick={handleUndo}
+            disabled={historyIndex === 0 || isPreviewMode}
+          >
+            <FiRotateCcw className="w-3.5 h-3.5" />
+            <span className="hidden xs:inline">Undo</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-1 text-xs"
+            onClick={handleRedo}
+            disabled={historyIndex === history.length - 1 || isPreviewMode}
+          >
+            <FiRotateCw className="w-3.5 h-3.5" />
+            <span className="hidden xs:inline">Redo</span>
+          </Button>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-1 text-xs"
+            onClick={() => setSaveDialogOpen(true)}
+            disabled={components.length === 0 || isPreviewMode}
+          >
+            <FiSave className="w-3.5 h-3.5" />
+            <span className="hidden xs:inline">Save</span>
+          </Button>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-1 text-xs"
+            onClick={() => setLoadDialogOpen(true)}
+          >
+            <FiList className="w-3.5 h-3.5" />
+            <span className="hidden xs:inline">Load</span>
+          </Button>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-1 text-xs"
+            onClick={() => setExportDialogOpen(true)}
+            disabled={components.length === 0}
+          >
+            <FiDownload className="w-3.5 h-3.5" />
+            <span className="hidden xs:inline">Export</span>
+          </Button>
+          
+          <Button 
+            variant="destructive" 
+            size="sm" 
+            className="flex items-center gap-1 text-xs"
+            onClick={handleReset}
+            disabled={components.length === 0 || isPreviewMode}
+          >
+            <FiTrash2 className="w-3.5 h-3.5" />
+            <span className="hidden xs:inline">Reset</span>
+          </Button>
+        </div>
       </div>
+      
       <div
-        ref={setCanvasRef}
         className={`flex-1 bg-white dark:bg-zinc-800 border-2 ${
-          isDraggingOver && !isPreviewMode ? 'border-orange-500 border-dashed' : 'border-gray-200 dark:border-zinc-700'
+          isDraggingOver && !isPreviewMode ? 'border-orange-500 border-dashed' : 
+          selectedMobileComponent ? 'border-orange-500 border-dashed' : 'border-gray-200 dark:border-zinc-700'
         } relative overflow-y-scroll overflow-x-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:transparent [&::-webkit-scrollbar-thumb]:bg-gray-300 dark:[&::-webkit-scrollbar-thumb]:bg-zinc-600`}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -1709,22 +2083,37 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
         onClick={handleCanvasClick}
       >
         <div className="min-h-full w-full relative" style={{ minHeight: '100%', height: '200%' }}>
-          {components.length === 0 && !isPreviewMode && (
-            <div className="absolute left-1/2 transform -translate-x-1/2 top-20 flex flex-col items-center justify-center text-gray-400">
+          {components.length === 0 && !isPreviewMode && !selectedMobileComponent && (
+            <div className="absolute left-1/2 transform -translate-x-1/2 top-20 flex flex-col items-center justify-center text-gray-400 text-center px-4">
               <FiMove className="w-8 h-8 mb-2" />
               <p className="text-sm">Drag and drop components here</p>
+              <p className="text-xs mt-2 max-w-xs">On mobile, tap a component in the sidebar first, then tap here to place it</p>
+            </div>
+          )}
+          
+          {components.length === 0 && !isPreviewMode && selectedMobileComponent && (
+            <div className="absolute left-1/2 transform -translate-x-1/2 top-20 flex flex-col items-center justify-center text-orange-500 text-center px-4">
+              <FiMove className="w-8 h-8 mb-2" />
+              <p className="text-sm">Tap anywhere on the canvas to place the {selectedMobileComponent.type}</p>
             </div>
           )}
 
           {components.map((component) => (
             <div
               key={component.id}
-              className={`absolute ${isPreviewMode ? '' : 'cursor-move'}`}
+              className={`absolute ${isPreviewMode ? '' : 'cursor-move'} ${selectedComponent === component.id ? 'ring-2 ring-orange-500' : ''} ${isMobileMoving && mobileMovingComponentId === component.id ? 'ring-2 ring-blue-500' : ''}`}
               style={{
                 left: `${component.position.x}px`,
                 top: `${component.position.y}px`,
                 transform: 'translate(-50%, -50%)',
+                zIndex: selectedComponent === component.id || (isMobileMoving && mobileMovingComponentId === component.id) ? 10 : 1,
               }}
+              onClick={(e) => handleComponentClick(component.id, e)}
+              draggable={!isPreviewMode}
+              onDragStart={(e) => handleComponentDragStart(e, component.id)}
+              onTouchStart={(e) => handleTouchStart(e, component.id)}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
             >
               <ResizableComponent
                 component={component}
@@ -1733,228 +2122,147 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
                 onResize={handleComponentResize}
               >
                 {renderComponent(component)}
+                
+                {/* Delete button - only show when selected and not in preview mode */}
+                {selectedComponent === component.id && !isPreviewMode && (
+                  <button
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-sm hover:bg-red-600 transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const newComponents = components.filter(c => c.id !== component.id);
+                      updateHistory(newComponents);
+                      setComponents(newComponents);
+                      setSelectedComponent(null);
+                    }}
+                    title="Delete Component"
+                  >
+                    <FiTrash2 className="w-3 h-3" />
+                  </button>
+                )}
               </ResizableComponent>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Footer with actions */}
-      <div className="flex justify-between items-center px-4 py-3 bg-gray-50 dark:bg-zinc-800 border-x-2 border-b-2 border-gray-200 dark:border-zinc-700 rounded-b-lg">
-        <div className="flex gap-2">
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button 
-                variant="destructive" 
-                size="sm" 
-                className="flex items-center gap-2"
-                disabled={components.length === 0 || isPreviewMode}
-              >
-                <FiTrash2 className="w-4 h-4" />
-                Reset Canvas
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent className="bg-white/80 dark:bg-zinc-800/80 backdrop-blur-md border border-gray-200 dark:border-zinc-700">
-              <AlertDialogHeader>
-                <AlertDialogTitle>Reset Canvas</AlertDialogTitle>
-                <AlertDialogDescription className="dark:text-zinc-300">
-                  Are you sure you want to reset the canvas? This will remove all components and cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleReset}>Reset</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+      {/* Component Properties Panel - only show when a component is selected and not in preview mode */}
+      {selectedComponent && !isPreviewMode && (
+        <div className="border-t border-gray-200 dark:border-zinc-700 p-3 max-h-64 overflow-auto">
+          <h3 className="text-sm font-medium mb-2">Component Properties</h3>
+          {components.find(c => c.id === selectedComponent) && (
+            <ComponentStyler
+              componentType={components.find(c => c.id === selectedComponent)!.type}
+              onStyleChange={(styles) => handleStyleChange(selectedComponent, styles)}
+              initialStyles={components.find(c => c.id === selectedComponent)!.styles}
+            />
+          )}
+        </div>
+      )}
 
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-2"
-            onClick={handleUndo}
-            disabled={currentHistoryIndex === 0 || isPreviewMode}
-          >
-            <FiRotateCcw className="w-4 h-4" />
-            Undo
-          </Button>
-
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-2"
-            onClick={handleRedo}
-            disabled={currentHistoryIndex === history.length - 1 || isPreviewMode}
-          >
-            <FiRotateCw className="w-4 h-4" />
-            Redo
-          </Button>
-
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-2"
-            onClick={() => {
-              setIsPreviewMode(!isPreviewMode);
-              if (!isPreviewMode) {
-                setSelectedComponent(null);
-              }
-            }}
-          >
-            {isPreviewMode ? (
-              <>
-                <FiEdit2 className="w-4 h-4" />
-                Edit Mode
-              </>
+      {/* Save Dialog */}
+      <AlertDialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Save Layout</AlertDialogTitle>
+            <AlertDialogDescription>
+              Enter a name for your layout to save it.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4">
+            <Input
+              placeholder="Layout Name"
+              value={layoutName}
+              onChange={(e) => setLayoutName(e.target.value)}
+              className="w-full"
+            />
+          </div>
+          <AlertDialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+            <AlertDialogCancel className="mt-2 sm:mt-0">Cancel</AlertDialogCancel>
+            <Button 
+              onClick={handleSave}
+              disabled={!layoutName.trim()}
+            >
+              Save Layout
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
+      {/* Load Dialog */}
+      <AlertDialog open={loadDialogOpen} onOpenChange={setLoadDialogOpen}>
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Load Layout</AlertDialogTitle>
+            <AlertDialogDescription>
+              Select a saved layout to load.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4">
+            {layouts.length === 0 ? (
+              <p className="text-center text-gray-500 dark:text-zinc-400 py-4">No saved layouts found.</p>
             ) : (
-              <>
-                <FiEye className="w-4 h-4" />
-                Preview
-              </>
+              <div className="space-y-2 max-h-60 overflow-auto">
+                {layouts.map((layout) => (
+                  <div 
+                    key={layout._id} 
+                    className={`p-3 rounded-md cursor-pointer border ${selectedLayout === layout._id ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/10' : 'border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800'}`}
+                    onClick={() => setSelectedLayout(layout._id || '')}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">{layout.name}</span>
+                      <span className="text-xs text-gray-500 dark:text-zinc-400">
+                        {new Date(layout.updatedAt || layout.createdAt || '').toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
-          </Button>
-        </div>
-
-        <div className="flex gap-2">
-          {/* Load Layout Button */}
-          <AlertDialog open={showLoadDialog} onOpenChange={setShowLoadDialog}>
-            <AlertDialogTrigger asChild>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="flex items-center gap-2"
-                disabled={savedLayouts.length === 0 || isPreviewMode}
-              >
-                <FiList className="w-4 h-4" />
-                Load Layout
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent className="bg-white/80 dark:bg-zinc-800/80 backdrop-blur-md border border-gray-200 dark:border-zinc-700">
-              <AlertDialogHeader>
-                <AlertDialogTitle>Load Layout</AlertDialogTitle>
-                <AlertDialogDescription className="dark:text-zinc-300">
-                  Select a saved layout to load. This will replace your current canvas.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <div className="py-4">
-                <Select value={selectedLayout} onValueChange={setSelectedLayout}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a layout" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {savedLayouts.map((layout) => (
-                      <SelectItem key={layout._id || layout.name} value={layout._id || layout.name}>
-                        {layout.name} {layout.createdAt && `(${new Date(layout.createdAt).toLocaleDateString()})`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <AlertDialogFooter>
-                <AlertDialogCancel onClick={() => setSelectedLayout('')}>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleLoad} disabled={!selectedLayout}>
-                  Load
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-
-          {/* Export Layout Button */}
-          <AlertDialog open={showExportDialog} onOpenChange={setShowExportDialog}>
-            <AlertDialogTrigger asChild>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="flex items-center gap-2"
-                disabled={components.length === 0 || isPreviewMode}
-              >
-                <FiDownload className="w-4 h-4" />
-                Export
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent className="bg-white/80 dark:bg-zinc-800/80 backdrop-blur-md border border-gray-200 dark:border-zinc-700">
-              <AlertDialogHeader>
-                <AlertDialogTitle>Export Layout</AlertDialogTitle>
-                <AlertDialogDescription className="dark:text-zinc-300">
-                  Choose a format to export your layout.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <div className="py-4 space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Layout Name
-                  </label>
-                  <Input
-                    placeholder="Enter layout name"
-                    value={layoutName}
-                    onChange={(e) => setLayoutName(e.target.value)}
-                    className="w-full"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Export Format
-                  </label>
-                  <Select value={exportFormat} onValueChange={setExportFormat}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select format" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="json">JSON</SelectItem>
-                      <SelectItem value="html">HTML</SelectItem>
-                      <SelectItem value="react">React Component</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleExport}>
-                  Export
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-
-          {/* Save Layout Button */}
-          <AlertDialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
-            <AlertDialogTrigger asChild>
-              <Button 
-                variant="default" 
-                size="sm" 
-                className="flex items-center gap-2"
-                disabled={components.length === 0 || isPreviewMode}
-              >
-                <FiSave className="w-4 h-4" />
-                Save Layout
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent className="bg-white/80 dark:bg-zinc-800/80 backdrop-blur-md border border-gray-200 dark:border-zinc-700">
-              <AlertDialogHeader>
-                <AlertDialogTitle>Save Layout</AlertDialogTitle>
-                <AlertDialogDescription className="dark:text-zinc-300">
-                  Give your layout a name to save it. You can load it later.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <div className="py-4">
-                <Input
-                  placeholder="Enter layout name"
-                  value={layoutName}
-                  onChange={(e) => setLayoutName(e.target.value)}
-                  className="w-full"
-                />
-              </div>
-              <AlertDialogFooter>
-                <AlertDialogCancel onClick={() => setLayoutName('')}>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleSave} disabled={!layoutName.trim()}>
-                  Save
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
-      </div>
-      <Toaster />
+          </div>
+          <AlertDialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+            <AlertDialogCancel className="mt-2 sm:mt-0">Cancel</AlertDialogCancel>
+            <Button 
+              onClick={handleLoad}
+              disabled={!selectedLayout || layouts.length === 0}
+            >
+              Load Layout
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
+      {/* Export Dialog */}
+      <AlertDialog open={exportDialogOpen} onOpenChange={setExportDialogOpen}>
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Export Design</AlertDialogTitle>
+            <AlertDialogDescription>
+              Choose a format to export your design.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4">
+            <Select value={exportType} onValueChange={setExportType}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select format" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="json">JSON</SelectItem>
+                <SelectItem value="html">HTML</SelectItem>
+                <SelectItem value="react">React Components</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <AlertDialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+            <AlertDialogCancel className="mt-2 sm:mt-0">Cancel</AlertDialogCancel>
+            <Button 
+              onClick={handleExport}
+              disabled={!exportType}
+            >
+              Export
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
