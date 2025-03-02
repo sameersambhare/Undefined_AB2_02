@@ -9,15 +9,6 @@ Here are some screenshots of the application:
 ### Home Page
 ![Home Page](public/screenshots/homepage.png)
 
-### UI Designer Interface
-![UI Designer](public/screenshots/ui-designer.png)
-
-### Component Library
-![Component Library](public/screenshots/component-library.png)
-
-### Export Options
-![Export Options](public/screenshots/export-options.png)
-
 ## 🚀 Features
 
 - **Drag-and-Drop Interface**: Easily create UI layouts by dragging and dropping components
