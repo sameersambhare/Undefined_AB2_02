@@ -12,9 +12,10 @@ Here are some screenshots of the application:
 ## 🚀 Features
 
 - **Drag-and-Drop Interface**: Easily create UI layouts by dragging and dropping components
+- - **Mail Notifications**: Mail Updates sent through mail notification Service Nodemailer to users
 - **Multiple UI Libraries**: Support for Shadcn UI, Material UI, and Ant Design components
 - **Component Styling**: Customize components with an intuitive styling interface
-- **Layout Management**: Save, load, and manage your UI designs
+- **Layout Management**: Save, load, and manage your UI designs 
 - **Export Options**: Export your designs as HTML, or React code
 - **Responsive Design**: Create layouts that work across different screen sizes
 - **User Authentication**: Secure user accounts with authentication
