@@ -22,7 +22,7 @@ const SignUp: React.FC = () => {
     // Redirect if already logged in
     useEffect(() => {
         if (user) {
-            router.push('/');
+            router.push('/createui');
         }
     }, [user, router]);
     
@@ -54,8 +54,11 @@ const SignUp: React.FC = () => {
         setIsSubmitting(true);
         
         try {
-            await register(name, email, password);
-            // Successful registration will trigger the useEffect above to redirect
+            const success = await register(name, email, password);
+            if (success) {
+                // Force navigation after successful registration
+                router.push('/createui');
+            }
         } catch (err) {
             console.error('Registration error:', err);
         } finally {

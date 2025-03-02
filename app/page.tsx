@@ -6,6 +6,8 @@ import { FiLayout, FiCode, FiZap, FiBox, FiFeather, FiShield, FiUsers, FiStar, F
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import Script from 'next/script';
+import { useAuth } from '@/app/providers/AuthProvider';
+import { useRouter } from 'next/navigation';
 
 const FeatureCard = ({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) => (
   <div className="bg-white dark:bg-zinc-800 p-8 rounded-xl shadow-sm hover:shadow-md transition-shadow">
@@ -44,6 +46,19 @@ const TestimonialCard = ({ quote, author, role }: { quote: string, author: strin
 );
 
 const Home = () => {
+  const { user } = useAuth();
+  const router = useRouter();
+  
+  const handleGetStarted = () => {
+    if (user) {
+      // If user is already logged in, go directly to createui
+      router.push('/createui');
+    } else {
+      // Otherwise go to signup
+      router.push('/signup');
+    }
+  };
+
   // Add structured data for SEO
   useEffect(() => {
     // This will only run on the client side
@@ -142,11 +157,12 @@ const Home = () => {
                 Create stunning user interfaces effortlessly using our AI-powered design tools. 
                 Transform your ideas into reality in minutes.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center sm:space-x-4">
-                <Link href="/signup" 
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <button
+                  onClick={handleGetStarted}
                   className="bg-orange-600 text-white hover:bg-orange-700 dark:bg-gradient-to-r dark:from-orange-700 dark:to-orange-600 dark:hover:from-orange-600 dark:hover:to-orange-500 px-6 sm:px-8 py-3 sm:py-4 rounded-lg text-base sm:text-lg font-semibold transition-all w-full sm:w-auto text-center">
                   Get Started Free
-                </Link>
+                </button>
                 <Link href="#features" 
                   className="bg-white dark:bg-zinc-800 text-gray-700 dark:text-zinc-200 hover:bg-gray-50 dark:hover:bg-zinc-700 border border-gray-200 dark:border-zinc-700 px-6 sm:px-8 py-3 sm:py-4 rounded-lg text-base sm:text-lg font-semibold transition-colors w-full sm:w-auto text-center">
                   Learn More
@@ -298,10 +314,11 @@ const Home = () => {
                   </p>
                 </div>
                 <div className="mt-8 lg:mt-0 lg:ml-8 flex flex-col sm:flex-row gap-4">
-                  <Link href="/signup" 
+                  <button
+                    onClick={handleGetStarted}
                     className="bg-white text-orange-600 hover:bg-orange-50 px-6 py-3 rounded-lg text-base font-semibold transition-colors w-full sm:w-auto text-center">
                     Get Started Free
-                  </Link>
+                  </button>
                   <Link href="/contact" 
                     className="bg-orange-700 text-white hover:bg-orange-800 px-6 py-3 rounded-lg text-base font-semibold transition-colors w-full sm:w-auto text-center">
                     Contact Sales
