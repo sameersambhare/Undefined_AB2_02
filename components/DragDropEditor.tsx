@@ -37,6 +37,8 @@ import {
 } from './ui/select';
 import { useAuth } from '@/app/providers/AuthProvider';
 import { useSearchParams } from 'next/navigation';
+import { useToast } from "@/components/ui/use-toast";
+import { Toaster } from "@/components/ui/toaster";
 
 interface DroppedComponent {
   id: string;
@@ -191,6 +193,9 @@ const DragDropEditor: React.FC<DragDropEditorProps> = ({
 
   // Add auth context
   const { user } = useAuth();
+
+  // Add toast notification context
+  const { toast } = useToast();
 
   // Replace localStorage loading with API fetch
   useEffect(() => {
@@ -565,7 +570,11 @@ const DragDropEditor: React.FC<DragDropEditorProps> = ({
     
     // Check if user is authenticated
     if (!user) {
-      alert('You must be logged in to save layouts');
+      toast({
+        variant: "destructive",
+        title: "Authentication Required",
+        description: "You must be logged in to save layouts",
+      });
       return;
     }
 
@@ -626,7 +635,11 @@ const DragDropEditor: React.FC<DragDropEditorProps> = ({
         ?.split('=')[1];
       
       if (!authToken) {
-        alert('Authentication token not found. Please log in again.');
+        toast({
+          variant: "destructive",
+          title: "Authentication Error",
+          description: "Authentication token not found. Please log in again.",
+        });
         return;
       }
       
@@ -653,7 +666,11 @@ const DragDropEditor: React.FC<DragDropEditorProps> = ({
       }
     } catch (error) {
       console.error('Error saving layout:', error);
-      alert('There was an error saving your layout. Please try again.');
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "There was an error saving your layout. Please try again.",
+      });
     }
   };
 
