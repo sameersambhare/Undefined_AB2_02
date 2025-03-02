@@ -30,14 +30,15 @@ export default function CreateUI() {
       
       if (!isLoading) {
         if (!user || !authToken) {
+          console.log("User not logged in, redirecting to signin");
           toast.error('You must be logged in to access this page');
-          router.push('/signin?callbackUrl=/createui');
+          window.location.href = '/signin?callbackUrl=/createui';
         }
       }
     };
     
     checkAuth();
-  }, [user, isLoading, router, toast]);
+  }, [user, isLoading, toast]);
 
   const handleDragStart = (
     event: React.DragEvent<HTMLDivElement>,
@@ -82,7 +83,7 @@ export default function CreateUI() {
           <h2 className="text-xl font-semibold mb-2">Authentication Required</h2>
           <p className="mb-4">Please sign in to access this page.</p>
           <button 
-            onClick={() => router.push('/signin?callbackUrl=/createui')}
+            onClick={() => window.location.href = '/signin?callbackUrl=/createui'}
             className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600"
           >
             Go to Sign In

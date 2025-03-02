@@ -17,6 +17,7 @@ export function middleware(request: NextRequest) {
     
     // If no token exists, redirect to signin
     if (!token) {
+      console.log(`Middleware: Redirecting from ${pathname} to signin (no auth token)`);
       const url = new URL('/signin', request.url);
       url.searchParams.set('callbackUrl', pathname);
       return NextResponse.redirect(url);
@@ -25,6 +26,7 @@ export function middleware(request: NextRequest) {
     // We don't verify the token here because jsonwebtoken uses Node.js crypto
     // which is not supported in the Edge Runtime
     // The actual verification will happen in the API routes and client components
+    console.log(`Middleware: User has token, allowing access to ${pathname}`);
   }
   
   return NextResponse.next();

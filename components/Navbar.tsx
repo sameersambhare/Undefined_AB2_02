@@ -19,7 +19,7 @@ const Navbar: React.FC = () => {
         logout();
         setMenuOpen(false);
         setMobileMenuOpen(false);
-        router.push('/');
+        window.location.href = '/';
     };
     
     // Get initials for avatar

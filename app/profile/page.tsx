@@ -24,6 +24,7 @@ import { DesignServices, AccessTime } from '@mui/icons-material';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ToastExample from '@/components/ToastExample';
+import { toast } from 'react-hot-toast';
 
 interface SavedLayout {
   _id?: string;
@@ -43,9 +44,10 @@ export default function Profile() {
   // But we'll add an extra check just in case
   useEffect(() => {
     if (!isLoading && !user) {
-      router.push('/signin');
+      toast.error('You must be logged in to view this page');
+      window.location.href = '/signin';
     }
-  }, [user, isLoading, router]);
+  }, [user, isLoading, toast]);
 
   // Fetch user's layouts when component mounts
   useEffect(() => {
@@ -97,7 +99,18 @@ export default function Profile() {
 
   // Navigate to the editor with the selected layout
   const handleEditLayout = (layoutId: string) => {
-    router.push(`/createui?layout=${layoutId}`);
+    window.location.href = `/createui?layout=${layoutId}`;
+  };
+
+  const handleDeleteAccount = async () => {
+    // ... existing code ...
+    if (response.ok) {
+      toast.success('Account deleted successfully');
+      logout();
+      window.location.href = '/';
+    } else {
+      // ... existing code ...
+    }
   };
 
   if (isLoading) {
@@ -263,9 +276,9 @@ export default function Profile() {
                     variant="contained" 
                     color="primary" 
                     sx={{ mt: 2 }}
-                    onClick={() => router.push('/createui')}
+                    onClick={() => window.location.href = '/createui'}
                   >
-                    Create Your First Layout
+                    Create New Layout
                   </Button>
                 </Box>
               )}

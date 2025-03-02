@@ -37,6 +37,7 @@ import {
 } from '@mui/icons-material';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { toast } from 'react-hot-toast';
 
 interface SavedLayout {
   _id?: string;
@@ -57,19 +58,16 @@ export default function Layouts() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(false);
 
-  // If no user is logged in, redirect to sign in
   useEffect(() => {
-    if (!isLoading && !user) {
-      router.push('/signin?callbackUrl=/layouts');
+    if (!isLoading) {
+      if (!user) {
+        toast.error('You must be logged in to view your layouts');
+        window.location.href = '/signin?callbackUrl=/layouts';
+      } else {
+        fetchLayouts();
+      }
     }
-  }, [user, isLoading, router]);
-
-  // Fetch user's layouts when component mounts
-  useEffect(() => {
-    if (user) {
-      fetchUserLayouts();
-    }
-  }, [user]);
+  }, [user, isLoading]);
 
   // Filter and sort layouts when dependencies change
   useEffect(() => {
@@ -113,7 +111,7 @@ export default function Layouts() {
   };
 
   // Function to fetch user's layouts
-  const fetchUserLayouts = async () => {
+  const fetchLayouts = async () => {
     try {
       setIsLoadingLayouts(true);
       
@@ -151,7 +149,7 @@ export default function Layouts() {
 
   // Navigate to the editor with the selected layout
   const handleEditLayout = (layoutId: string) => {
-    router.push(`/createui?layout=${layoutId}`);
+    window.location.href = `/createui?layout=${layoutId}`;
   };
 
   // Delete a layout
@@ -223,7 +221,7 @@ export default function Layouts() {
             variant="contained" 
             color="primary" 
             startIcon={<DesignServices />}
-            onClick={() => router.push('/createui')}
+            onClick={() => window.location.href = '/createui'}
           >
             Create New Layout
           </Button>
@@ -389,7 +387,7 @@ export default function Layouts() {
               variant="contained" 
               color="primary" 
               sx={{ mt: 2 }}
-              onClick={() => router.push('/createui')}
+              onClick={() => window.location.href = '/createui'}
             >
               Create Your First Layout
             </Button>
