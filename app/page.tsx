@@ -246,43 +246,6 @@ const Home = () => {
           </div>
         </section>
 
-        <section className="py-16 sm:py-20 bg-gray-50 dark:bg-zinc-900">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12 sm:mb-16">
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-zinc-50 mb-3 sm:mb-4">
-                Trusted by designers worldwide
-              </h2>
-              <p className="text-lg sm:text-xl text-gray-600 dark:text-zinc-300 max-w-3xl mx-auto">
-                Our platform is used by thousands of designers and developers around the world.
-              </p>
-            </div>
-            <div className="flex flex-wrap justify-center gap-8 sm:gap-12 items-center">
-              <StatCard number="100+" label="Designers" />
-              <StatCard number="100+" label="Developers" />
-              <StatCard number="100+" label="Countries" />
-            </div>
-          </div>
-        </section>
-
-        <section className="py-16 sm:py-20 bg-white dark:bg-zinc-950">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12 sm:mb-16">
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-zinc-50 mb-3 sm:mb-4">
-                By the numbers
-              </h2>
-              <p className="text-lg sm:text-xl text-gray-600 dark:text-zinc-300 max-w-3xl mx-auto">
-                SnapUI is growing rapidly and helping designers create amazing interfaces.
-              </p>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
-              <StatCard number="100+" label="Interfaces Created" />
-              <StatCard number="100+" label="Components Used" />
-              <StatCard number="100+" label="Designs Completed" />
-              <StatCard number="100+" label="Designs Saved" />
-            </div>
-          </div>
-        </section>
-
         <section className="py-16 sm:py-20 bg-gradient-to-b from-gray-50 to-white dark:from-zinc-900 dark:to-zinc-950">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12 sm:mb-16">
