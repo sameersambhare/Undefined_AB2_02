@@ -37,6 +37,8 @@ import {
 } from './ui/select';
 import { useAuth } from '@/app/providers/AuthProvider';
 import { useSearchParams } from 'next/navigation';
+import { useToast } from "@/components/ui/use-toast";
+import { Toaster } from "@/components/ui/toaster";
 
 // Add type imports for dynamic imports
 type Html2Canvas = typeof import('html2canvas')['default'];
@@ -191,6 +193,9 @@ const DragDropEditor: React.FC = () => {
 
   // Add auth context
   const { user } = useAuth();
+
+  // Add toast notification context
+  const { toast } = useToast();
 
   // Replace localStorage loading with API fetch
   useEffect(() => {
@@ -565,7 +570,11 @@ const DragDropEditor: React.FC = () => {
     
     // Check if user is authenticated
     if (!user) {
-      alert('You must be logged in to save layouts');
+      toast({
+        variant: "destructive",
+        title: "Authentication Required",
+        description: "You must be logged in to save layouts",
+      });
       return;
     }
 
@@ -626,7 +635,11 @@ const DragDropEditor: React.FC = () => {
         ?.split('=')[1];
       
       if (!authToken) {
-        alert('Authentication token not found. Please log in again.');
+        toast({
+          variant: "destructive",
+          title: "Authentication Error",
+          description: "Authentication token not found. Please log in again.",
+        });
         return;
       }
       
@@ -643,7 +656,11 @@ const DragDropEditor: React.FC = () => {
       const data = await response.json();
       
       if (response.ok && data.success) {
-        alert('Layout saved successfully!');
+        toast({
+          title: "Success",
+          description: "Layout saved successfully!",
+          className: "bg-green-500 text-white",
+        });
         setShowSaveDialog(false);
         setLayoutName('');
         // Refresh the layouts list
@@ -653,7 +670,11 @@ const DragDropEditor: React.FC = () => {
       }
     } catch (error) {
       console.error('Error saving layout:', error);
-      alert('There was an error saving your layout. Please try again.');
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "There was an error saving your layout. Please try again.",
+      });
     }
   };
 
@@ -1933,6 +1954,7 @@ export default ${layoutName ? layoutName.replace(/\s+/g, '') : 'UILayout'};
           </AlertDialog>
         </div>
       </div>
+      <Toaster />
     </div>
   );
 };
