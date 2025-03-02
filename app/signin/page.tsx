@@ -20,11 +20,12 @@ const SignInForm = () => {
     const toast = useToast();
     const router = useRouter();
     const searchParams = useSearchParams();
-    const callbackUrl = searchParams?.get('callbackUrl') || '/';
+    const callbackUrl = searchParams?.get('callbackUrl') || '/createui';
     
     // Redirect if already logged in
     useEffect(() => {
         if (user) {
+            console.log("User logged in, redirecting to:", callbackUrl);
             router.push(callbackUrl);
         }
     }, [user, router, callbackUrl]);
@@ -53,7 +54,10 @@ const SignInForm = () => {
         
         try {
             await login(email, password);
-            // Successful login will trigger the useEffect above to redirect
+            // Force navigation after successful login
+            if (!searchParams?.get('callbackUrl')) {
+                router.push('/createui');
+            }
         } catch (err) {
             console.error('Login error:', err);
             toast.error('Failed to sign in. Please try again.');

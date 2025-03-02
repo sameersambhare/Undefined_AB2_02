@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 // Define which routes require authentication
-const protectedRoutes = ['/createui', '/profile'];
+const protectedRoutes = ['/createui', '/profile', '/layouts'];
 
 export function middleware(request: NextRequest) {
   // Get the pathname from the URL
@@ -18,7 +18,7 @@ export function middleware(request: NextRequest) {
     // If no token exists, redirect to signin
     if (!token) {
       const url = new URL('/signin', request.url);
-      url.searchParams.set('callbackUrl', encodeURI(pathname));
+      url.searchParams.set('callbackUrl', pathname);
       return NextResponse.redirect(url);
     }
     

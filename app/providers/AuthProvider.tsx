@@ -17,8 +17,8 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   error: string | null;
-  login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<boolean>;
+  register: (name: string, email: string, password: string) => Promise<boolean>;
   logout: () => void;
   clearError: () => void;
 }
@@ -87,13 +87,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           path: '/'
         });
         
-        // Redirect to dashboard
-        router.push('/createui');
+        // Return success but don't redirect here - let the component handle it
+        return true;
       } else {
         setError(data.error || 'Login failed');
+        return false;
       }
     } catch (error: any) {
       setError('Network error. Please try again.');
+      return false;
     } finally {
       setIsLoading(false);
     }
@@ -123,13 +125,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           path: '/'
         });
         
-        // Redirect to dashboard
-        router.push('/createui');
+        // Return success but don't redirect here - let the component handle it
+        return true;
       } else {
         setError(data.error || 'Registration failed');
+        return false;
       }
     } catch (error: any) {
       setError('Network error. Please try again.');
+      return false;
     } finally {
       setIsLoading(false);
     }
