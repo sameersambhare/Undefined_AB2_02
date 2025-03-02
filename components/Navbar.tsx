@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import React, { useState } from 'react';
 import { FiHome, FiEdit, FiInfo, FiMail, FiLogIn, FiUserPlus, FiUser, FiLogOut, FiGrid } from 'react-icons/fi';
 import ThemeToggle from './ThemeToggle';
@@ -34,8 +35,19 @@ const Navbar: React.FC = () => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center h-16">
                     <div className="flex items-center space-x-8">
-                        <Link href="/" className="text-2xl font-bold text-orange-500 dark:text-orange-400">
-                            SnapUI
+                        <Link href="/" className="relative w-48 h-12">
+                            <Image
+                                src="/logo_dark.png"
+                                alt="SnapUI Logo"
+                                fill
+                                className="object-contain hidden dark:block"
+                            />
+                            <Image
+                                src="/logo_white.png"
+                                alt="SnapUI Logo"
+                                fill
+                                className="object-contain dark:hidden"
+                            />
                         </Link>
                         <div className="hidden sm:flex space-x-4">
                             <Link 
