@@ -13,7 +13,7 @@ export const thankYouEmailTemplate = (name: string) => ({
 
   <p>⏳ Our team will review your inquiry and get back to you as soon as possible, typically within 24 hours.</p>
 
-  <p>❓ In the meantime, if you have any urgent questions, please don't hesitate to reach out to us directly at sameersambhare@gmail.com.</p>
+  <p>❓ In the meantime, if you have any urgent questions, please don't hesitate to reach out to us directly at snapui.tech@gmail.com.</p>
 
   <p>Best regards,<br>
   ✨ The UI Designer Team</p>
