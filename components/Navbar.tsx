@@ -62,26 +62,28 @@ const Navbar: React.FC = () => {
                             />
                         </Link>
                         
-                        <Link href="/" className={getLinkClassName('/')}>
-                            <FiHome className="w-4 h-4" />
-                            <span>Home</span>
-                        </Link>
-                        <Link href="/createui" className={getLinkClassName('/createui')}>
-                            <FiEdit className="w-4 h-4" />
-                            <span>Create UI</span>
-                        </Link>
-                        <Link href="/layouts" className={getLinkClassName('/layouts')}>
-                            <FiGrid className="w-4 h-4" />
-                            <span>My Layouts</span>
-                        </Link>
-                        <Link href="/about" className={getLinkClassName('/about')}>
-                            <FiInfo className="w-4 h-4" />
-                            <span>About Us</span>
-                        </Link>
-                        <Link href="/contact" className={getLinkClassName('/contact')}>
-                            <FiMail className="w-4 h-4" />
-                            <span>Contact Us</span>
-                        </Link>
+                        <div className="hidden md:flex items-center space-x-4">
+                            <Link href="/" className={getLinkClassName('/')}>
+                                <FiHome className="w-4 h-4" />
+                                <span>Home</span>
+                            </Link>
+                            <Link href="/createui" className={getLinkClassName('/createui')}>
+                                <FiEdit className="w-4 h-4" />
+                                <span>Create UI</span>
+                            </Link>
+                            <Link href="/layouts" className={getLinkClassName('/layouts')}>
+                                <FiGrid className="w-4 h-4" />
+                                <span>My Layouts</span>
+                            </Link>
+                            <Link href="/about" className={getLinkClassName('/about')}>
+                                <FiInfo className="w-4 h-4" />
+                                <span>About Us</span>
+                            </Link>
+                            <Link href="/contact" className={getLinkClassName('/contact')}>
+                                <FiMail className="w-4 h-4" />
+                                <span>Contact Us</span>
+                            </Link>
+                        </div>
                     </div>
                     <div className="flex items-center space-x-2 md:space-x-4">
                         <ThemeToggle />
@@ -98,7 +100,7 @@ const Navbar: React.FC = () => {
                             )}
                         </button>
                         
-                        {/* Desktop navigation */}
+                        {/* Auth buttons */}
                         <div className="hidden md:flex items-center space-x-2">
                             {!isLoading && !user ? (
                                 <>
