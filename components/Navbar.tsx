@@ -6,11 +6,12 @@ import React, { useState } from 'react';
 import { FiHome, FiEdit, FiInfo, FiMail, FiLogIn, FiUserPlus, FiUser, FiLogOut, FiGrid, FiMenu, FiX } from 'react-icons/fi';
 import ThemeToggle from './ThemeToggle';
 import { useAuth } from '@/app/providers/AuthProvider';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
 const Navbar: React.FC = () => {
     const { user, logout, isLoading } = useAuth();
     const router = useRouter();
+    const pathname = usePathname();
     const [menuOpen, setMenuOpen] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     
@@ -30,6 +31,15 @@ const Navbar: React.FC = () => {
             .join('')
             .toUpperCase()
             .substring(0, 2);
+    };
+
+    const getLinkClassName = (href: string) => {
+        const isActive = pathname === href;
+        return `flex items-center space-x-2 ${
+            isActive 
+                ? 'text-orange-500 dark:text-orange-400' 
+                : 'text-gray-600 dark:text-gray-300 hover:text-orange-500 dark:hover:text-orange-400'
+        } px-3 lg:px-4 py-2 rounded-lg transition-colors`;
     };
     
     return (
@@ -51,43 +61,27 @@ const Navbar: React.FC = () => {
                                 className="object-contain dark:hidden"
                             />
                         </Link>
-                        <div className="hidden md:flex space-x-2 lg:space-x-4">
-                            <Link 
-                                href="/" 
-                                className="flex items-center space-x-2 text-gray-600 dark:text-gray-300 hover:text-orange-500 dark:hover:text-orange-400 px-3 lg:px-4 py-2 rounded-lg transition-colors"
-                            >
-                                <FiHome className="w-4 h-4" />
-                                <span>Home</span>
-                            </Link>
-                            <Link 
-                                href="/createui" 
-                                className="flex items-center space-x-2 text-gray-600 dark:text-gray-300 hover:text-orange-500 dark:hover:text-orange-400 px-3 lg:px-4 py-2 rounded-lg transition-colors"
-                            >
-                                <FiEdit className="w-4 h-4" />
-                                <span>Create UI</span>
-                            </Link>
-                            <Link 
-                                href="/layouts" 
-                                className="flex items-center space-x-2 text-gray-600 dark:text-gray-300 hover:text-orange-500 dark:hover:text-orange-400 px-3 lg:px-4 py-2 rounded-lg transition-colors"
-                            >
-                                <FiGrid className="w-4 h-4" />
-                                <span>My Layouts</span>
-                            </Link>
-                            <Link 
-                                href="/about" 
-                                className="flex items-center space-x-2 text-gray-600 dark:text-gray-300 hover:text-orange-500 dark:hover:text-orange-400 px-3 lg:px-4 py-2 rounded-lg transition-colors"
-                            >
-                                <FiInfo className="w-4 h-4" />
-                                <span>About Us</span>
-                            </Link>
-                            <Link 
-                                href="/contact" 
-                                className="flex items-center space-x-2 text-gray-600 dark:text-gray-300 hover:text-orange-500 dark:hover:text-orange-400 px-3 lg:px-4 py-2 rounded-lg transition-colors"
-                            >
-                                <FiMail className="w-4 h-4" />
-                                <span>Contact Us</span>
-                            </Link>
-                        </div>
+                        
+                        <Link href="/" className={getLinkClassName('/')}>
+                            <FiHome className="w-4 h-4" />
+                            <span>Home</span>
+                        </Link>
+                        <Link href="/createui" className={getLinkClassName('/createui')}>
+                            <FiEdit className="w-4 h-4" />
+                            <span>Create UI</span>
+                        </Link>
+                        <Link href="/layouts" className={getLinkClassName('/layouts')}>
+                            <FiGrid className="w-4 h-4" />
+                            <span>My Layouts</span>
+                        </Link>
+                        <Link href="/about" className={getLinkClassName('/about')}>
+                            <FiInfo className="w-4 h-4" />
+                            <span>About Us</span>
+                        </Link>
+                        <Link href="/contact" className={getLinkClassName('/contact')}>
+                            <FiMail className="w-4 h-4" />
+                            <span>Contact Us</span>
+                        </Link>
                     </div>
                     <div className="flex items-center space-x-2 md:space-x-4">
                         <ThemeToggle />
@@ -163,43 +157,23 @@ const Navbar: React.FC = () => {
             {mobileMenuOpen && (
                 <div className="md:hidden bg-white dark:bg-zinc-900 border-b border-gray-100 dark:border-zinc-800">
                     <div className="px-2 pt-2 pb-3 space-y-1">
-                        <Link 
-                            href="/" 
-                            className="flex items-center space-x-2 text-gray-600 dark:text-gray-300 hover:text-orange-500 dark:hover:text-orange-400 px-3 py-2 rounded-lg transition-colors"
-                            onClick={() => setMobileMenuOpen(false)}
-                        >
+                        <Link href="/" className={getLinkClassName('/')} onClick={() => setMobileMenuOpen(false)}>
                             <FiHome className="w-4 h-4" />
                             <span>Home</span>
                         </Link>
-                        <Link 
-                            href="/createui" 
-                            className="flex items-center space-x-2 text-gray-600 dark:text-gray-300 hover:text-orange-500 dark:hover:text-orange-400 px-3 py-2 rounded-lg transition-colors"
-                            onClick={() => setMobileMenuOpen(false)}
-                        >
+                        <Link href="/createui" className={getLinkClassName('/createui')} onClick={() => setMobileMenuOpen(false)}>
                             <FiEdit className="w-4 h-4" />
                             <span>Create UI</span>
                         </Link>
-                        <Link 
-                            href="/layouts" 
-                            className="flex items-center space-x-2 text-gray-600 dark:text-gray-300 hover:text-orange-500 dark:hover:text-orange-400 px-3 py-2 rounded-lg transition-colors"
-                            onClick={() => setMobileMenuOpen(false)}
-                        >
+                        <Link href="/layouts" className={getLinkClassName('/layouts')} onClick={() => setMobileMenuOpen(false)}>
                             <FiGrid className="w-4 h-4" />
                             <span>My Layouts</span>
                         </Link>
-                        <Link 
-                            href="/about" 
-                            className="flex items-center space-x-2 text-gray-600 dark:text-gray-300 hover:text-orange-500 dark:hover:text-orange-400 px-3 py-2 rounded-lg transition-colors"
-                            onClick={() => setMobileMenuOpen(false)}
-                        >
+                        <Link href="/about" className={getLinkClassName('/about')} onClick={() => setMobileMenuOpen(false)}>
                             <FiInfo className="w-4 h-4" />
                             <span>About Us</span>
                         </Link>
-                        <Link 
-                            href="/contact" 
-                            className="flex items-center space-x-2 text-gray-600 dark:text-gray-300 hover:text-orange-500 dark:hover:text-orange-400 px-3 py-2 rounded-lg transition-colors"
-                            onClick={() => setMobileMenuOpen(false)}
-                        >
+                        <Link href="/contact" className={getLinkClassName('/contact')} onClick={() => setMobileMenuOpen(false)}>
                             <FiMail className="w-4 h-4" />
                             <span>Contact Us</span>
                         </Link>
