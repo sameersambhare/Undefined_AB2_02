@@ -22,9 +22,10 @@ const SignUp: React.FC = () => {
     // Redirect if already logged in
     useEffect(() => {
         if (user) {
-            router.push('/createui');
+            console.log("User already logged in, redirecting to createui");
+            window.location.href = '/createui';
         }
-    }, [user, router]);
+    }, [user]);
     
     // Clear auth errors when component mounts
     useEffect(() => {
@@ -56,8 +57,9 @@ const SignUp: React.FC = () => {
         try {
             const success = await register(name, email, password);
             if (success) {
+                console.log("Registration successful, redirecting to createui");
                 // Force navigation after successful registration
-                router.push('/createui');
+                window.location.href = '/createui';
             }
         } catch (err) {
             console.error('Registration error:', err);

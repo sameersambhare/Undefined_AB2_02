@@ -52,10 +52,12 @@ const Home = () => {
   const handleGetStarted = () => {
     if (user) {
       // If user is already logged in, go directly to createui
-      router.push('/createui');
+      console.log("User logged in, redirecting to createui");
+      window.location.href = '/createui';
     } else {
       // Otherwise go to signup
-      router.push('/signup');
+      console.log("User not logged in, redirecting to signup");
+      window.location.href = '/signup';
     }
   };
 

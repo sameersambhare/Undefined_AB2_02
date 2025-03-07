@@ -94,6 +94,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return false;
       }
     } catch (error: any) {
+      console.error('Auth error:', error);
       setError('Network error. Please try again.');
       return false;
     } finally {
@@ -132,6 +133,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return false;
       }
     } catch (error: any) {
+      console.error('Auth error:', error);
       setError('Network error. Please try again.');
       return false;
     } finally {
@@ -141,8 +143,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = () => {
     setUser(null);
-    Cookies.remove('auth_token');
-    router.push('/');
+    Cookies.remove('auth_token', { path: '/' });
+    window.location.href = '/';
   };
 
   const clearError = () => {

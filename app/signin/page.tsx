@@ -26,9 +26,10 @@ const SignInForm = () => {
     useEffect(() => {
         if (user) {
             console.log("User logged in, redirecting to:", callbackUrl);
-            router.push(callbackUrl);
+            // Use window.location for more reliable redirects in production
+            window.location.href = callbackUrl;
         }
-    }, [user, router, callbackUrl]);
+    }, [user, callbackUrl]);
     
     // Clear auth errors when component mounts
     useEffect(() => {
@@ -53,10 +54,12 @@ const SignInForm = () => {
         setIsSubmitting(true);
         
         try {
-            await login(email, password);
+            const success = await login(email, password);
             // Force navigation after successful login
-            if (!searchParams?.get('callbackUrl')) {
-                router.push('/createui');
+            if (success) {
+                console.log("Login successful, redirecting to:", callbackUrl);
+                // Use window.location for more reliable redirects in production
+                window.location.href = callbackUrl;
             }
         } catch (err) {
             console.error('Login error:', err);
